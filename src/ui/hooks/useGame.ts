@@ -13,6 +13,7 @@ import {
   launchNewProduct, processAllRaises, generateCandidates, migrateGameState,
   shouldSuggestPivot, getPivotOptions, executePivot,
   canLaunchSubBusiness, launchSubBusiness, withdrawSubBusiness,
+  setDevAllocation,
 } from '../../engine/GameEngine';
 import { autoSave, loadAutoSave, clearAutoSave, saveToSlot, loadFromSlot } from './useSave';
 import { Sound } from './useSound';
@@ -69,6 +70,7 @@ interface GameStore {
   canLaunchSub: () => boolean;
   launchSub: (domain: BusinessDomainId, name: string, budget: number, team: number) => void;
   withdrawSub: (subId: string) => void;
+  setAllocation: (ratio: number) => void;
 
   saveGame: (slotId: number) => void;
   loadGame: (slotId: number) => void;
@@ -333,6 +335,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const { state } = get();
     if (!state) return;
     const newState = withdrawSubBusiness(state, subId);
+    autoSave(newState);
+    set({ state: newState });
+  },
+
+  setAllocation: (ratio) => {
+    const { state } = get();
+    if (!state) return;
+    const newState = setDevAllocation(state, ratio);
     autoSave(newState);
     set({ state: newState });
   },

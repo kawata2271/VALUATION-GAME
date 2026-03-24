@@ -253,6 +253,8 @@ export interface GameState {
   // Product
   nps: number;
   techDebt: number;
+  techDebtCategories: TechDebtCategories;
+  devAllocation: number;  // 0-1: 新機能開発の割合 (残りが負債返済)
   productSpeed: number;
   featuresInProgress: FeatureInProgress[];
   completedFeatures: CompletedFeature[];
@@ -448,6 +450,13 @@ export interface Achievement {
 }
 
 export type OrgWallType = 'wall_5' | 'wall_15' | 'wall_30' | 'wall_50' | 'wall_100';
+
+export interface TechDebtCategories {
+  infrastructure: number;  // 0-25
+  codeQuality: number;     // 0-25
+  security: number;        // 0-25
+  scalability: number;     // 0-25
+}
 
 export interface RivalCompany {
   name: string;

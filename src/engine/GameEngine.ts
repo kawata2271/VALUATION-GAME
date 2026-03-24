@@ -88,6 +88,8 @@ export function createInitialState(
 
     nps: baseNps,
     techDebt: 0,
+    techDebtCategories: { infrastructure: 0, codeQuality: 0, security: 0, scalability: 0 },
+    devAllocation: 0.8, // デフォルト: 80%新機能開発, 20%負債返済
     productSpeed: 1 + f.devSpeedBonus,
     featuresInProgress: [],
     completedFeatures: [],
@@ -249,8 +251,9 @@ export function advanceTurn(state: GameState): GameState {
     }
   }
 
+  // 新機能開発にはdevAllocation割合のリソースのみ使用
   s.featuresInProgress = s.featuresInProgress.map(f => {
-    const progress = (efficiency / techDebtPenalty) * s.productSpeed * techStackSpeed;
+    const progress = (efficiency / techDebtPenalty) * s.productSpeed * techStackSpeed * s.devAllocation;
     return { ...f, monthsRemaining: Math.max(0, f.monthsRemaining - progress) };
   });
 
@@ -267,18 +270,54 @@ export function advanceTurn(state: GameState): GameState {
     s.eventLog = [...s.eventLog, { month: s.month, title: `${feat.name} リリース`, effect: `NPS+${feat.npsBonus}` }];
   }
 
-  // --- Tech debt ---
+  // --- Tech debt (category-based) ---
   const featuresShippedThisMonth = completed.length;
-  let tdDelta = featuresShippedThisMonth * 3;
-  tdDelta += engCount < 3 && engCount > 0 ? 1 : 0;
-  tdDelta -= hasCTO(s) ? 3 : 0;
-  tdDelta += (Math.random() - 0.5) * 2;
-  if (s.founderType === 'engineer') tdDelta *= 0.7;
-  if (s.cofounder === 'tech') tdDelta *= 0.8;
-  if (s.founderType === 'sales') tdDelta *= 1.3;
-  tdDelta *= ts.techDebtRate; // tech stack modifier
-  if (s.employees.some(e => e.specialAbility?.id === 'debugger')) tdDelta *= 0.7; // debugger ability
-  s.techDebt = Math.max(0, Math.min(100, s.techDebt + tdDelta));
+
+  // 蓄積: 新機能開発の割合に比例して負債が増加
+  let tdIncrease = featuresShippedThisMonth * 2 + s.devAllocation * 1.5;
+  tdIncrease += engCount < 3 && engCount > 0 ? 1 : 0;
+  tdIncrease -= hasCTO(s) ? 2 : 0;
+  tdIncrease += (Math.random() - 0.5) * 1.5;
+  if (s.founderType === 'engineer') tdIncrease *= 0.7;
+  if (s.cofounder === 'tech') tdIncrease *= 0.8;
+  if (s.founderType === 'sales') tdIncrease *= 1.3;
+  tdIncrease *= ts.techDebtRate;
+  if (s.employees.some(e => e.specialAbility?.id === 'debugger')) tdIncrease *= 0.7;
+  tdIncrease = Math.max(0, tdIncrease);
+
+  // 返済: 開発リソースの(1-devAllocation)割合で負債を返済
+  const repaymentRatio = 1 - s.devAllocation;
+  const repaymentCapacity = engCount * repaymentRatio * 0.8;
+  const devSpeedPenalty = s.techDebt * 0.005;
+  const effectiveRepayment = repaymentCapacity * (1 - devSpeedPenalty);
+
+  // カテゴリ別に蓄積を分配
+  const cats = { ...s.techDebtCategories };
+  const catKeys = ['infrastructure', 'codeQuality', 'security', 'scalability'] as const;
+  const incPerCat = tdIncrease / 4;
+  const repPerCat = effectiveRepayment / 4;
+  for (const key of catKeys) {
+    cats[key] = Math.max(0, Math.min(25, cats[key] + incPerCat - repPerCat + (Math.random() - 0.5) * 0.5));
+  }
+  // 顧客数に応じてスケーラビリティ負債が追加蓄積
+  if (s.customers > 50) cats.scalability = Math.min(25, cats.scalability + 0.2);
+  if (s.customers > 200) cats.scalability = Math.min(25, cats.scalability + 0.3);
+  s.techDebtCategories = cats;
+
+  // 総合スコアを再計算
+  s.techDebt = Math.max(0, Math.min(100, cats.infrastructure + cats.codeQuality + cats.security + cats.scalability));
+
+  // 技術負債起因イベント判定
+  if (!s.pendingEvent) {
+    const debtEvent = checkTechDebtEvents(s);
+    if (debtEvent) {
+      s.pendingEvent = debtEvent;
+    }
+  }
+
+  // チャーンレートに負債ペナルティ適用
+  const debtChurnPenalty = s.techDebt * 0.0003;
+  s.churnRate = Math.max(0.3, s.churnRate + debtChurnPenalty);
 
   // --- PMF Check ---
   const coreCount = s.completedFeatures.filter(cf => {
@@ -587,6 +626,80 @@ export function advanceTurn(state: GameState): GameState {
 }
 
 // ===== Event System =====
+
+// ===== Tech Debt Events =====
+function checkTechDebtEvents(state: GameState): (GameEvent & { instanceId: string }) | null {
+  const td = state.techDebtCategories;
+  const debtEvents: { condition: boolean; prob: number; event: GameEvent }[] = [
+    {
+      condition: td.codeQuality > 10,
+      prob: 0.15,
+      event: {
+        id: 'td_bug_outbreak', title: '軽微なバグ多発', category: 'product', severity: 'negative',
+        description: `コード品質の低下(${td.codeQuality.toFixed(0)}/25)により、バグ報告が急増。顧客からクレームが相次いでいる。`,
+        choices: [
+          { label: '緊急ホットフィックス', description: 'エンジニア総動員で修正', effect: { cash: -30000, npsDelta: -3, techDebtDelta: -3, message: 'ホットフィックスで一時的に収束' } },
+          { label: '次回リリースで対応', description: '今は新機能を優先', effect: { npsDelta: -8, churnDelta: 0.3, customersDelta: -2, message: 'バグ放置で顧客不満が拡大' } },
+        ],
+      },
+    },
+    {
+      condition: td.infrastructure > 15,
+      prob: 0.12,
+      event: {
+        id: 'td_infra_failure', title: 'インフラ障害発生', category: 'product', severity: 'critical',
+        description: `老朽化したインフラ(${td.infrastructure.toFixed(0)}/25)が原因でサービスが2時間ダウン。SLA違反の恐れ。`,
+        choices: [
+          { label: '緊急復旧+再発防止', description: 'インフラ刷新に着手', effect: { cash: -80000, npsDelta: -10, techDebtDelta: -5, brandDelta: 3, message: '障害復旧。インフラ刷新を開始' } },
+          { label: '応急処置のみ', description: '最低限の対応', effect: { cash: -20000, npsDelta: -15, churnDelta: 0.5, customersDelta: -3, message: '応急処置のみ。再発リスクが残る' } },
+        ],
+      },
+    },
+    {
+      condition: td.security > 18,
+      prob: 0.10,
+      event: {
+        id: 'td_security_breach', title: 'セキュリティ脆弱性を攻撃された', category: 'product', severity: 'critical',
+        description: `セキュリティ負債(${td.security.toFixed(0)}/25)の放置が原因で、外部からの攻撃を受けた。顧客データへの影響を調査中。`,
+        choices: [
+          { label: '即時対応+外部監査', description: '¥200Kの投資で全面対応', effect: { cash: -200000, npsDelta: -15, churnDelta: 1.0, customersDelta: -5, techDebtDelta: -8, brandDelta: -10, message: '外部監査を実施。重大な被害は防いだ' } },
+          { label: '内部で処理', description: '公表せず修正', effect: { cash: -50000, npsDelta: -5, brandDelta: -20, churnDelta: 2.0, customersDelta: -8, message: '隠蔽を試みたが、後日リークされるリスク大' } },
+        ],
+      },
+    },
+    {
+      condition: td.scalability > 16 && state.customers > 50,
+      prob: 0.15,
+      event: {
+        id: 'td_scaling_crisis', title: 'スケーリング限界に到達', category: 'product', severity: 'negative',
+        description: `顧客増加にインフラが追いつかない(${td.scalability.toFixed(0)}/25)。レスポンスが遅延し、大口顧客から苦情。`,
+        choices: [
+          { label: 'インフラ増強', description: '¥100Kで緊急スケールアップ', effect: { cash: -100000, techDebtDelta: -4, npsDelta: 3, message: 'インフラ増強で一時的に解決。根本対応は別途必要' } },
+          { label: '顧客に待ってもらう', description: '改善を約束', effect: { npsDelta: -10, churnDelta: 0.5, customersDelta: -3, message: '顧客の忍耐は限界に近い' } },
+        ],
+      },
+    },
+    {
+      condition: state.techDebt > 70,
+      prob: 0.12,
+      event: {
+        id: 'td_engineer_burnout', title: 'エンジニアが技術負債に疲弊', category: 'internal', severity: 'negative',
+        description: `技術負債${state.techDebt.toFixed(0)}/100。「もうこのコードベースでは働けない」とエンジニアが退職を示唆。`,
+        choices: [
+          { label: '負債返済を約束', description: 'devAllocationを調整して見せる', effect: { moraleDelta: 5, techDebtDelta: -3, message: '負債返済の約束でなんとか引き留めた' } },
+          { label: '放置する', description: '辞めるなら仕方ない', effect: { moraleDelta: -15, cash: -50000, message: 'エンジニアが退職。採用コストが発生' } },
+        ],
+      },
+    },
+  ];
+
+  for (const de of debtEvents) {
+    if (de.condition && Math.random() < de.prob) {
+      return { ...de.event, instanceId: `td_${de.event.id}_${state.month}` };
+    }
+  }
+  return null;
+}
 
 function tryTriggerEvent(state: GameState): (GameEvent & { instanceId: string }) | null {
   const allEvents = [...events, ...phase2Events, ...allPhase4Events];
@@ -996,13 +1109,23 @@ export function continueAsPrivate(state: GameState): GameState {
 
 export function runTechDebtSprint(state: GameState): GameState {
   const s = { ...state };
-  s.techDebt = Math.max(0, s.techDebt - 20);
+  const cats = { ...s.techDebtCategories };
+  const catKeys = ['infrastructure', 'codeQuality', 'security', 'scalability'] as const;
+  for (const key of catKeys) {
+    cats[key] = Math.max(0, cats[key] - 5);
+  }
+  s.techDebtCategories = cats;
+  s.techDebt = Math.max(0, cats.infrastructure + cats.codeQuality + cats.security + cats.scalability);
   s.eventLog = [...s.eventLog, {
     month: s.month,
     title: '技術負債スプリント実施',
-    effect: '技術負債-20',
+    effect: `技術負債 ${state.techDebt.toFixed(0)} → ${s.techDebt.toFixed(0)} (各カテゴリ-5)`,
   }];
   return s;
+}
+
+export function setDevAllocation(state: GameState, allocation: number): GameState {
+  return { ...state, devAllocation: Math.max(0, Math.min(1, allocation)) };
 }
 
 // ===== Pricing =====
