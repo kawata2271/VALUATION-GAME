@@ -1,0 +1,170 @@
+import { Feature } from '../types';
+
+export const features: Feature[] = [
+  // ===== コア機能 =====
+  {
+    id: 'core_basic',
+    name: '基本機能',
+    category: 'core',
+    months: 2,
+    npsBonus: 5,
+    churnReduction: 0.5,
+    arpuBonus: 0,
+    description: '領域の基本機能セット。PMF達成の最低条件。',
+  },
+  {
+    id: 'core_advanced',
+    name: '高度な基本機能',
+    category: 'core',
+    months: 3,
+    npsBonus: 8,
+    churnReduction: 0.3,
+    arpuBonus: 10,
+    description: 'コア機能の拡充。顧客満足度と単価向上。',
+    requiresFeature: 'core_basic',
+  },
+  {
+    id: 'core_reporting',
+    name: 'レポート・分析',
+    category: 'core',
+    months: 2,
+    npsBonus: 6,
+    churnReduction: 0.4,
+    arpuBonus: 15,
+    description: 'データ分析・レポーティング機能。Mid-Market以上に人気。',
+    requiresFeature: 'core_basic',
+  },
+
+  // ===== 差別化機能 =====
+  {
+    id: 'diff_ai',
+    name: 'AI機能',
+    category: 'differentiation',
+    months: 4,
+    npsBonus: 15,
+    churnReduction: 0.5,
+    arpuBonus: 50,
+    description: 'AI/ML による自動化・予測機能。バリュエーション倍率UP。',
+    requiresFeature: 'core_advanced',
+  },
+  {
+    id: 'diff_automation',
+    name: 'ワークフロー自動化',
+    category: 'differentiation',
+    months: 3,
+    npsBonus: 12,
+    churnReduction: 0.6,
+    arpuBonus: 30,
+    description: '業務フローの自動化。NDR向上に大きく貢献。',
+    requiresFeature: 'core_basic',
+  },
+  {
+    id: 'diff_marketplace',
+    name: 'マーケットプレイス',
+    category: 'differentiation',
+    months: 5,
+    npsBonus: 10,
+    churnReduction: 0.8,
+    arpuBonus: 20,
+    description: 'サードパーティ連携のマーケットプレイス。エコシステム構築。',
+    requiresFeature: 'core_advanced',
+  },
+
+  // ===== インフラ機能 =====
+  {
+    id: 'infra_sso',
+    name: 'SSO/SAML',
+    category: 'infrastructure',
+    months: 2,
+    npsBonus: 3,
+    churnReduction: 0.2,
+    arpuBonus: 20,
+    description: 'シングルサインオン。Enterprise顧客獲得の必須条件。',
+    enterpriseRequired: true,
+  },
+  {
+    id: 'infra_api',
+    name: 'パブリックAPI',
+    category: 'infrastructure',
+    months: 3,
+    npsBonus: 8,
+    churnReduction: 0.5,
+    arpuBonus: 25,
+    description: '外部連携用API。プラットフォーム戦略の基盤。',
+    requiresFeature: 'core_basic',
+  },
+  {
+    id: 'infra_security',
+    name: 'セキュリティ強化',
+    category: 'infrastructure',
+    months: 2,
+    npsBonus: 2,
+    churnReduction: 0.3,
+    arpuBonus: 10,
+    description: '暗号化、監査ログ、コンプライアンス対応。',
+  },
+  {
+    id: 'infra_i18n',
+    name: '多言語対応',
+    category: 'infrastructure',
+    months: 3,
+    npsBonus: 5,
+    churnReduction: 0.2,
+    arpuBonus: 5,
+    description: 'グローバル展開の前提条件。',
+    requiresFeature: 'core_basic',
+  },
+
+  // ===== 体験向上機能 =====
+  {
+    id: 'exp_mobile',
+    name: 'モバイルアプリ',
+    category: 'experience',
+    months: 4,
+    npsBonus: 12,
+    churnReduction: 0.4,
+    arpuBonus: 10,
+    description: 'iOS/Androidアプリ。利用頻度向上でチャーン低下。',
+    requiresFeature: 'core_basic',
+  },
+  {
+    id: 'exp_integrations',
+    name: '外部サービス連携',
+    category: 'experience',
+    months: 2,
+    npsBonus: 10,
+    churnReduction: 0.5,
+    arpuBonus: 15,
+    description: 'Slack, Google, Microsoft等との連携。スイッチングコスト上昇。',
+    requiresFeature: 'core_basic',
+  },
+  {
+    id: 'exp_onboarding',
+    name: 'セルフオンボーディング',
+    category: 'experience',
+    months: 2,
+    npsBonus: 8,
+    churnReduction: 0.6,
+    arpuBonus: 0,
+    description: 'チュートリアル・ガイド付きセットアップ。初期チャーンを大幅削減。',
+  },
+  {
+    id: 'exp_dashboard',
+    name: 'カスタムダッシュボード',
+    category: 'experience',
+    months: 3,
+    npsBonus: 10,
+    churnReduction: 0.3,
+    arpuBonus: 20,
+    description: 'ユーザーが自由にカスタマイズできるダッシュボード。',
+    requiresFeature: 'core_reporting',
+  },
+];
+
+export function getAvailableFeatures(completedIds: string[]): Feature[] {
+  return features.filter(f => {
+    if (completedIds.includes(f.id)) return false;
+    if (f.requiresFeature && !completedIds.includes(f.requiresFeature)) return false;
+    return true;
+  });
+}
