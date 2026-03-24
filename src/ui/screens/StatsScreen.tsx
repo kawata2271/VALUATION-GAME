@@ -2,13 +2,7 @@ import React from 'react';
 import { getUnlocks, unlockConditions } from '../../engine/data/unlocks';
 import { getLeaderboard, LeaderboardEntry } from '../../engine/data/leaderboard';
 import { achievements as achievementDefs } from '../../engine/data/achievements';
-
-const fmt = (n: number): string => {
-  if (n >= 1e9) return `$${(n / 1e9).toFixed(1)}B`;
-  if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
-  if (n >= 1e3) return `$${(n / 1e3).toFixed(0)}K`;
-  return `$${n.toFixed(0)}`;
-};
+import { formatCurrency } from '../../utils/currency';
 
 const gradeColors: Record<string, string> = {
   SSS: '#ffd700', SS: '#ff9500', S: '#ec4899', A: '#6366f1',
@@ -124,7 +118,7 @@ export const StatsScreen: React.FC<Props> = ({ onBack }) => {
                       <td style={{ ...tdStyle, textAlign: 'left', color: '#888' }}>{e.vertical}</td>
                       <td style={{ ...tdStyle, textAlign: 'left', color: '#888' }}>{e.founderType}</td>
                       <td style={tdStyle}>{e.month}M</td>
-                      <td style={tdStyle}>{fmt(e.mrr)}</td>
+                      <td style={tdStyle}>{formatCurrency(e.mrr)}</td>
                       <td style={{ ...tdStyle, fontWeight: 700 }}>{e.score.toLocaleString()}</td>
                       <td style={{ ...tdStyle, fontWeight: 700, color: gradeColors[e.grade] || '#888' }}>{e.grade}</td>
                       <td style={{ ...tdStyle, color: '#888' }}>{e.exitType}</td>

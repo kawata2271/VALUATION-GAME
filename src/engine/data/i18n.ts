@@ -27,7 +27,7 @@ const translations: TranslationMap = {
   'setup.hard': { ja: 'ハード', en: 'Hard' },
   'setup.hard.desc': { ja: '初期資金半減、顧客獲得-30%。真の経営者だけが生き残る。', en: 'Half starting cash, -30% customer acquisition. Only true CEOs survive.' },
   'setup.sandbox': { ja: 'サンドボックス', en: 'Sandbox' },
-  'setup.sandbox.desc': { ja: '初期資金$10M。自由に実験できるモード。', en: '$10M starting cash. Experiment freely.' },
+  'setup.sandbox.desc': { ja: '初期資金¥10M。自由に実験できるモード。', en: '¥10M starting cash. Experiment freely.' },
   'setup.scenarios': { ja: '歴史シナリオ', en: 'Historical Scenarios' },
   'setup.companyname': { ja: '会社名を決める', en: 'Name Your Company' },
   'setup.companyname.sub': { ja: 'あなたのSaaS企業の名前を入力してください', en: 'Enter your SaaS company name' },

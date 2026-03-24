@@ -1,17 +1,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { GameState, MonthlySnapshot } from '../../engine/types';
+import { formatCurrency } from '../../utils/currency';
 
 interface Props {
   state: GameState;
   onClose: () => void;
 }
-
-const fmt = (n: number): string => {
-  if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
-  if (n >= 1e3) return `$${(n / 1e3).toFixed(0)}K`;
-  return `$${n.toFixed(0)}`;
-};
 
 const pctChange = (curr: number, prev: number): string => {
   if (prev === 0) return curr > 0 ? '+∞' : '±0';
@@ -77,9 +72,9 @@ export const QuarterlySummary: React.FC<Props> = ({ state, onClose }) => {
 
         {/* Metrics Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
-          <MetricBox label="MRR" value={fmt(latest.mrr)} change={mrrChange} />
+          <MetricBox label="MRR" value={formatCurrency(latest.mrr)} change={mrrChange} />
           <MetricBox label="顧客" value={`${latest.customers}社`} change={`${custChange >= 0 ? '+' : ''}${custChange}`} />
-          <MetricBox label="キャッシュ" value={fmt(latest.cash)} change={fmt(cashChange)} positive={cashChange >= 0} />
+          <MetricBox label="キャッシュ" value={formatCurrency(latest.cash)} change={formatCurrency(cashChange)} positive={cashChange >= 0} />
           <MetricBox label="NPS" value={`${latest.nps.toFixed(0)}`} />
           <MetricBox label="チーム" value={`${latest.teamSize}人`} />
           <MetricBox label="技術負債" value={`${latest.techDebt.toFixed(0)}`} positive={latest.techDebt < 40} />

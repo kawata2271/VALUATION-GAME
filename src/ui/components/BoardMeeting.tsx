@@ -156,7 +156,7 @@ export const BoardMeeting: React.FC<Props> = ({ state, onComplete }) => {
           background: 'rgba(255,215,0,0.05)', borderRadius: 6,
           fontSize: 11, color: '#888',
         }}>
-          <span>ARR: <strong style={{ color: '#fff' }}>${(arr / 1e6).toFixed(1)}M</strong></span>
+          <span>ARR: <strong style={{ color: '#fff' }}>¥{(arr / 1e6).toFixed(1)}M</strong></span>
           <span>顧客: <strong style={{ color: '#fff' }}>{state.customers}</strong></span>
           <span>チーム: <strong style={{ color: '#fff' }}>{state.employees.length}人</strong></span>
           <span>NPS: <strong style={{ color: '#fff' }}>{state.nps.toFixed(0)}</strong></span>

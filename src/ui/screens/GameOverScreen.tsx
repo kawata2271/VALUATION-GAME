@@ -5,13 +5,7 @@ import { ShareResult } from '../components/ShareResult';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { getUnlocks, saveUnlocks, processUnlocks } from '../../engine/data/unlocks';
 import { addToLeaderboard, getLeaderboard, LeaderboardEntry } from '../../engine/data/leaderboard';
-
-const fmt = (n: number): string => {
-  if (n >= 1e9) return `$${(n / 1e9).toFixed(1)}B`;
-  if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
-  if (n >= 1e3) return `$${(n / 1e3).toFixed(0)}K`;
-  return `$${n.toFixed(0)}`;
-};
+import { formatCurrency } from '../../utils/currency';
 
 const exitLabels: Record<string, { label: string; color: string }> = {
   ipo: { label: 'IPO達成', color: '#ffd700' },
@@ -116,9 +110,9 @@ export const GameOverScreen: React.FC = () => {
           display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12,
           marginBottom: 24,
         }}>
-          <StatCard label="最終MRR" value={fmt(state.mrr)} />
-          <StatCard label="最終ARR" value={fmt(state.mrr * 12)} />
-          <StatCard label="評価額" value={fmt(state.valuation)} color="#ffd700" />
+          <StatCard label="最終MRR" value={formatCurrency(state.mrr)} />
+          <StatCard label="最終ARR" value={formatCurrency(state.mrr * 12)} />
+          <StatCard label="評価額" value={formatCurrency(state.valuation)} color="#ffd700" />
           <StatCard label="顧客数" value={`${state.customers}社`} />
           <StatCard label="チーム" value={`${state.employees.length}人`} />
           <StatCard label="持分" value={`${state.founderEquity.toFixed(0)}%`} color="#ec4899" />
@@ -133,7 +127,7 @@ export const GameOverScreen: React.FC = () => {
             background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 16,
             marginBottom: 24, border: '1px solid rgba(255,255,255,0.06)',
           }}>
-            <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>MRR推移 ($K)</div>
+            <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>MRR推移 (¥K)</div>
             <ResponsiveContainer width="100%" height={150}>
               <LineChart data={mrrData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />

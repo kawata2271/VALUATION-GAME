@@ -271,7 +271,7 @@ export const phase2Events: GameEvent[] = [
     choices: [
       {
         label: 'セキュリティ投資を強化',
-        description: '$100Kでセキュリティ監査と強化',
+        description: '¥100Kでセキュリティ監査と強化',
         effect: { cash: -100000, brandDelta: 15, npsDelta: 5, message: 'セキュリティ強化で企業の信頼性が向上' },
       },
       {
@@ -407,7 +407,7 @@ export const phase2Events: GameEvent[] = [
     choices: [
       {
         label: '認証取得して受注',
-        description: '$100K + 3ヶ月で認証を取得',
+        description: '¥100K + 3ヶ月で認証を取得',
         effect: { cash: -100000, mrrMultiplier: 1.1, brandDelta: 15, message: '政府契約を獲得！信頼性の証明に' },
       },
       {
@@ -524,7 +524,7 @@ export const phase2Events: GameEvent[] = [
     severity: 'neutral',
     conditions: { minTeamSize: 15, probability: 0.06 },
     choices: [
-      { label: 'D&Iプログラムを導入', description: '$30Kの予算で多様性推進', effect: { cash: -30000, moraleDelta: 10, brandDelta: 10, message: 'D&I施策が好評。採用ブランドが向上' } },
+      { label: 'D&Iプログラムを導入', description: '¥30Kの予算で多様性推進', effect: { cash: -30000, moraleDelta: 10, brandDelta: 10, message: 'D&I施策が好評。採用ブランドが向上' } },
       { label: '実力主義を貫く', description: '能力だけで判断する', effect: { moraleDelta: -5, brandDelta: -5, message: '一部社員から不満の声。採用にも影響' } },
     ],
   },

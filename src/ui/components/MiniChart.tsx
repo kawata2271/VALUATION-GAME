@@ -23,7 +23,7 @@ export const MiniChart: React.FC<Props> = ({ data, dataKey, color = '#00c896', h
         <Tooltip
           contentStyle={{ background: '#1a1a2e', border: '1px solid #333', borderRadius: 6, fontSize: 12 }}
           labelFormatter={(v) => `Month ${v}`}
-          formatter={(v: any) => [`$${Number(v).toLocaleString()}`, '']}
+          formatter={(v: any) => [`¥${Number(v).toLocaleString()}`, '']}
         />
         <Area
           type="monotone"

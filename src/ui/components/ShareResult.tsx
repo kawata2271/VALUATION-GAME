@@ -1,17 +1,11 @@
 import React, { useState } from 'react';
 import { GameState } from '../../engine/types';
 import { getGrade } from '../../engine/GameEngine';
+import { formatCurrency } from '../../utils/currency';
 
 interface Props {
   state: GameState;
 }
-
-const fmt = (n: number): string => {
-  if (n >= 1e9) return `$${(n / 1e9).toFixed(1)}B`;
-  if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
-  if (n >= 1e3) return `$${(n / 1e3).toFixed(0)}K`;
-  return `$${n.toFixed(0)}`;
-};
 
 const exitLabels: Record<string, string> = {
   ipo: 'IPO', mna: 'M&A', continue: '継続経営', bankrupt: '倒産',
@@ -31,8 +25,8 @@ Grade: ${grade} 「${title}」
 Score: ${state.finalScore.toLocaleString()} pts
 ${bars}${empty}
 
-📊 ARR ${fmt(arr)} | 👥 ${state.customers}社
-💰 評価額 ${fmt(state.valuation)}
+📊 ARR ${formatCurrency(arr)} | 👥 ${state.customers}社
+💰 評価額 ${formatCurrency(state.valuation)}
 📅 ${state.month}ヶ月経営
 🏢 チーム${state.employees.length}人
 

@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { RaiseRequest } from '../../engine/types';
 import { GRADE_COLORS } from '../../engine/data/employeeBalance';
+import { formatSalary } from '../../utils/currency';
 
 interface Props {
   requests: RaiseRequest[];
   onSubmit: (decisions: Record<string, 'approved' | 'negotiated' | 'rejected'>) => void;
 }
 
-const fmt = (n: number) => `$${(n / 1000).toFixed(0)}K`;
 
 export const RaiseEventModal: React.FC<Props> = ({ requests, onSubmit }) => {
   const [decisions, setDecisions] = useState<Record<string, 'approved' | 'negotiated' | 'rejected'>>({});
@@ -69,7 +69,7 @@ export const RaiseEventModal: React.FC<Props> = ({ requests, onSubmit }) => {
           </button>
           <div style={{ marginLeft: 'auto', fontSize: 12, color: '#888' }}>
             年間コスト増: <span style={{ color: totalIncrease > 0 ? '#f59e0b' : '#00c896', fontFamily: 'monospace' }}>
-              +{fmt(totalIncrease)}/年
+              +{formatSalary(totalIncrease)}/年
             </span>
           </div>
         </div>
@@ -99,7 +99,7 @@ export const RaiseEventModal: React.FC<Props> = ({ requests, onSubmit }) => {
                 </div>
 
                 <div style={{ fontSize: 11, color: '#888', marginBottom: 8 }}>
-                  {fmt(r.currentSalary)} → <span style={{ color: '#f59e0b' }}>{fmt(r.requestedSalary)}</span>
+                  {formatSalary(r.currentSalary)} → <span style={{ color: '#f59e0b' }}>{formatSalary(r.requestedSalary)}</span>
                   <span style={{ color: '#666', marginLeft: 8 }}>({r.raiseRate.toFixed(1)}%)</span>
                 </div>
 

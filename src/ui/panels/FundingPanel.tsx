@@ -50,7 +50,7 @@ export const FundingPanel: React.FC = () => {
                 <span style={{ fontSize: 11, color: '#888', marginLeft: 8 }}>Month {r.month}</span>
               </div>
               <div style={{ fontSize: 12, color: '#ffd700' }}>
-                ${(r.amount / 1e6).toFixed(1)}M @ ${(r.valuation / 1e6).toFixed(0)}M
+                ¥{(r.amount / 1e6).toFixed(1)}M @ ¥{(r.valuation / 1e6).toFixed(0)}M
               </div>
             </div>
           ))}
@@ -77,7 +77,7 @@ export const FundingPanel: React.FC = () => {
                   <span style={{ fontSize: 12, color: '#f59e0b' }}>成功率: {(opt.successRate * 100).toFixed(0)}%</span>
                 </div>
                 <div style={{ display: 'flex', gap: 12, fontSize: 11, color: '#888', marginBottom: 10 }}>
-                  <span>${(opt.minAmount / 1e6).toFixed(1)}M - ${(opt.maxAmount / 1e6).toFixed(0)}M</span>
+                  <span>¥{(opt.minAmount / 1e6).toFixed(1)}M - ¥{(opt.maxAmount / 1e6).toFixed(0)}M</span>
                   <span>希薄化: ~{opt.dilution}%</span>
                 </div>
                 <button
@@ -105,7 +105,7 @@ export const FundingPanel: React.FC = () => {
       }}>
         <div style={{ fontSize: 11, color: '#888', marginBottom: 4 }}>現在の評価額</div>
         <div style={{ fontSize: 24, fontWeight: 700, color: '#ffd700', fontFamily: 'monospace' }}>
-          ${(state.valuation / 1e6).toFixed(1)}M
+          ¥{(state.valuation / 1e6).toFixed(1)}M
         </div>
       </div>
     </div>

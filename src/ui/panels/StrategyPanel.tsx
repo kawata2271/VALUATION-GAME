@@ -5,12 +5,7 @@ import { archetypeLabels } from '../../engine/data/investors';
 import { achievements as achievementDefs } from '../../engine/data/achievements';
 import { ProgressBar } from '../components/ProgressBar';
 import { Acquisition } from '../../engine/types';
-
-const fmt = (n: number): string => {
-  if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
-  if (n >= 1e3) return `$${(n / 1e3).toFixed(0)}K`;
-  return `$${n.toFixed(0)}`;
-};
+import { formatCurrency } from '../../utils/currency';
 
 export const StrategyPanel: React.FC = () => {
   const state = useGameStore(s => s.state)!;
@@ -54,7 +49,7 @@ export const StrategyPanel: React.FC = () => {
           <div style={{ display: 'flex', gap: 8, marginTop: 6, fontSize: 10 }}>
             <span style={{ color: '#00c896' }}>開発速度: x{state.month <= 18 ? ts.devSpeedEarly : ts.devSpeedLate}</span>
             <span style={{ color: '#f59e0b' }}>負債率: x{ts.techDebtRate}</span>
-            {ts.infraCostExtra > 0 && <span style={{ color: '#ef4444' }}>追加コスト: ${(ts.infraCostExtra/12).toFixed(0)}/月</span>}
+            {ts.infraCostExtra > 0 && <span style={{ color: '#ef4444' }}>追加コスト: ¥{(ts.infraCostExtra/12).toFixed(0)}/月</span>}
           </div>
           {ts.scalingLimit > 0 && state.customers > ts.scalingLimit * 0.7 && (
             <div style={{ color: '#ef4444', marginTop: 6, fontSize: 11 }}>
@@ -143,7 +138,7 @@ export const StrategyPanel: React.FC = () => {
               borderLeft: '3px solid #00c896',
             }}>
               <span style={{ fontSize: 12, color: '#00c896', fontWeight: 700 }}>{state.companyName} (YOU)</span>
-              <span style={{ fontSize: 11, color: '#00c896', fontFamily: 'monospace' }}>{fmt(state.mrr)} MRR</span>
+              <span style={{ fontSize: 11, color: '#00c896', fontFamily: 'monospace' }}>{formatCurrency(state.mrr)} MRR</span>
             </div>
             {/* Rivals */}
             {state.rivals.map((r, i) => (
@@ -165,7 +160,7 @@ export const StrategyPanel: React.FC = () => {
                   fontSize: 11, fontFamily: 'monospace',
                   color: r.mrr > state.mrr ? '#ef4444' : '#888',
                 }}>
-                  {r.status === 'active' ? `${fmt(r.mrr)} MRR` : '-'}
+                  {r.status === 'active' ? `${formatCurrency(r.mrr)} MRR` : '-'}
                 </span>
               </div>
             ))}
@@ -203,7 +198,7 @@ export const StrategyPanel: React.FC = () => {
                     cursor: state.cash >= r.setupCost ? 'pointer' : 'not-allowed',
                   }}
                 >
-                  {fmt(r.setupCost)} / {r.setupMonths}ヶ月
+                  {formatCurrency(r.setupCost)} / {r.setupMonths}ヶ月
                 </button>
               )}
             </div>
@@ -244,10 +239,10 @@ export const StrategyPanel: React.FC = () => {
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                     <span style={{ fontSize: 13, fontWeight: 600 }}>{t.targetName}</span>
-                    <span style={{ fontSize: 11, color: '#ec4899' }}>{fmt(t.cost)}</span>
+                    <span style={{ fontSize: 11, color: '#ec4899' }}>{formatCurrency(t.cost)}</span>
                   </div>
                   <div style={{ fontSize: 10, color: '#888', marginBottom: 6 }}>
-                    MRR+{fmt(t.monthlyRevenue)} | {t.teamSize}人 | 負債+{t.techDebtAdded} | {t.synergy}
+                    MRR+{formatCurrency(t.monthlyRevenue)} | {t.teamSize}人 | 負債+{t.techDebtAdded} | {t.synergy}
                   </div>
                   <button
                     onClick={() => { buyCompany(t); setAcqTargets([]); }}
@@ -286,7 +281,7 @@ export const StrategyPanel: React.FC = () => {
               cursor: state.cash >= 500000 ? 'pointer' : 'not-allowed', width: '100%',
             }}
           >
-            新プロダクトを立ち上げ ($500K | MRR+10% | 負債+15)
+            新プロダクトを立ち上げ (¥500K | MRR+10% | 負債+15)
           </button>
         </div>
       )}

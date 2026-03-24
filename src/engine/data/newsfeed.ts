@@ -43,7 +43,7 @@ function rivalNews(rivals: Rival[]): string[] {
 
   for (const r of active) {
     if (r.mrr > 100000) {
-      news.push(`${r.name}が急成長中。MRR $${(r.mrr / 1000).toFixed(0)}K突破`);
+      news.push(`${r.name}が急成長中。MRR ¥${(r.mrr / 1000).toFixed(0)}K突破`);
     }
     if (r.funding > 5000000) {
       news.push(`${r.name}が大型調達を完了した模様`);
@@ -90,7 +90,7 @@ export function generateNewsFeed(state: GameState, rivals: Rival[]): string[] {
 
   // Player-specific context
   if (state.mrr * 12 > 1000000) {
-    feed.push(`${state.companyName}がARR $${((state.mrr * 12) / 1e6).toFixed(1)}Mに到達。業界アナリストが注目`);
+    feed.push(`${state.companyName}がARR ¥${((state.mrr * 12) / 1e6).toFixed(1)}Mに到達。業界アナリストが注目`);
   }
   if (state.nps > 70) {
     feed.push(`${state.companyName}の顧客満足度が業界平均を大きく上回る`);

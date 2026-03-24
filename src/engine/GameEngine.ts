@@ -621,7 +621,7 @@ export function hireEmployee(state: GameState, role: EmployeeRole, candidate?: E
   s.eventLog = [...s.eventLog, {
     month: s.month,
     title: `${roleInfo.nameJa}を採用`,
-    effect: `${employee.name} (${gradeLabel}ランク, $${(employee.salary / 1000).toFixed(0)}K/年)${abilityMsg}`,
+    effect: `${employee.name} (${gradeLabel}ランク, ¥${(employee.salary / 1000).toFixed(0)}K/年)${abilityMsg}`,
   }];
 
   return s;
@@ -639,7 +639,7 @@ export function fireEmployee(state: GameState, employeeId: string): GameState {
   s.eventLog = [...s.eventLog, {
     month: s.month,
     title: `${roles[emp.role].nameJa}を解雇`,
-    effect: `${emp.name} (退職金: $${Math.floor(severancePay).toLocaleString()})`,
+    effect: `${emp.name} (退職金: ¥${Math.floor(severancePay).toLocaleString()})`,
   }];
 
   return s;
@@ -803,7 +803,7 @@ export function attemptFunding(state: GameState, type: FundingOption['type']): G
   s.eventLog = [...s.eventLog, {
     month: s.month,
     title: `${option.nameJa}調達成功！`,
-    effect: `$${(amount / 1_000_000).toFixed(1)}M at $${(valuation / 1_000_000).toFixed(0)}M valuation (${investorName})`,
+    effect: `¥${(amount / 1_000_000).toFixed(1)}M at ¥${(valuation / 1_000_000).toFixed(0)}M valuation (${investorName})`,
   }];
 
   return s;
@@ -816,7 +816,7 @@ export function attemptIPO(state: GameState): GameState {
   const arr = s.mrr * 12;
 
   if (arr < 10_000_000 || !hasCFO(s)) {
-    s.eventLog = [...s.eventLog, { month: s.month, title: 'IPO不可', effect: 'ARR $10M以上かつCFO在籍が必要' }];
+    s.eventLog = [...s.eventLog, { month: s.month, title: 'IPO不可', effect: 'ARR ¥10M以上かつCFO在籍が必要' }];
     return s;
   }
 
@@ -836,7 +836,7 @@ export function attemptIPO(state: GameState): GameState {
   s.eventLog = [...s.eventLog, {
     month: s.month,
     title: 'IPO達成！',
-    effect: `時価総額: $${(ipoValuation / 1_000_000).toFixed(0)}M | 創業者持分価値: $${(founderValue / 1_000_000).toFixed(0)}M`,
+    effect: `時価総額: ¥${(ipoValuation / 1_000_000).toFixed(0)}M | 創業者持分価値: ¥${(founderValue / 1_000_000).toFixed(0)}M`,
   }];
 
   return s;
@@ -847,7 +847,7 @@ export function attemptMnA(state: GameState): GameState {
   const arr = s.mrr * 12;
 
   if (arr < 1_000_000) {
-    s.eventLog = [...s.eventLog, { month: s.month, title: 'M&A不可', effect: 'ARR $1M以上が必要' }];
+    s.eventLog = [...s.eventLog, { month: s.month, title: 'M&A不可', effect: 'ARR ¥1M以上が必要' }];
     return s;
   }
 
@@ -865,7 +865,7 @@ export function attemptMnA(state: GameState): GameState {
   s.eventLog = [...s.eventLog, {
     month: s.month,
     title: 'M&A成立！',
-    effect: `買収額: $${(acquisitionPrice / 1_000_000).toFixed(0)}M | 創業者受取: $${(founderValue / 1_000_000).toFixed(0)}M`,
+    effect: `買収額: ¥${(acquisitionPrice / 1_000_000).toFixed(0)}M | 創業者受取: ¥${(founderValue / 1_000_000).toFixed(0)}M`,
   }];
 
   return s;
@@ -957,7 +957,7 @@ export function changePrice(state: GameState, direction: 'up' | 'down', percent:
     s.eventLog = [...s.eventLog, {
       month: s.month,
       title: `値上げ ${percent}%`,
-      effect: `ARPU $${oldArpu.toFixed(0)} → $${s.arpu.toFixed(0)} | チャーンリスク+${churnIncrease.toFixed(1)}%`,
+      effect: `ARPU ¥${oldArpu.toFixed(0)} → ¥${s.arpu.toFixed(0)} | チャーンリスク+${churnIncrease.toFixed(1)}%`,
     }];
   } else {
     // Price decrease: better acquisition, lower ARPU
@@ -965,7 +965,7 @@ export function changePrice(state: GameState, direction: 'up' | 'down', percent:
     s.eventLog = [...s.eventLog, {
       month: s.month,
       title: `値下げ ${percent}%`,
-      effect: `ARPU $${oldArpu.toFixed(0)} → $${s.arpu.toFixed(0)} | CAC改善`,
+      effect: `ARPU ¥${oldArpu.toFixed(0)} → ¥${s.arpu.toFixed(0)} | CAC改善`,
     }];
   }
 
@@ -1010,7 +1010,7 @@ export function startGlobalExpansion(state: GameState, regionId: string): GameSt
   s.eventLog = [...s.eventLog, {
     month: s.month,
     title: `${region.nameJa}展開開始`,
-    effect: `$${(region.setupCost / 1000).toFixed(0)}K投資、${region.setupMonths}ヶ月後に展開完了`,
+    effect: `¥${(region.setupCost / 1000).toFixed(0)}K投資、${region.setupMonths}ヶ月後に展開完了`,
   }];
   return s;
 }
@@ -1061,7 +1061,7 @@ export function executeAcquisition(state: GameState, acquisition: Acquisition): 
   s.eventLog = [...s.eventLog, {
     month: s.month,
     title: `${acquisition.targetName}を買収`,
-    effect: `$${(acquisition.cost / 1e6).toFixed(1)}M | +$${(acquisition.monthlyRevenue / 1000).toFixed(0)}K MRR | +${acquisition.teamSize}人 | シナジー: ${acquisition.synergy}`,
+    effect: `¥${(acquisition.cost / 1e6).toFixed(1)}M | +¥${(acquisition.monthlyRevenue / 1000).toFixed(0)}K MRR | +${acquisition.teamSize}人 | シナジー: ${acquisition.synergy}`,
   }];
 
   return s;
@@ -1082,7 +1082,7 @@ export function launchNewProduct(state: GameState): GameState {
   s.eventLog = [...s.eventLog, {
     month: s.month,
     title: `新プロダクトラインを立ち上げ (#${s.multiProductCount})`,
-    effect: `$500K投資 | MRR+$${(mrrBoost / 1000).toFixed(0)}K | 技術負債+15`,
+    effect: `¥500K投資 | MRR+¥${(mrrBoost / 1000).toFixed(0)}K | 技術負債+15`,
   }];
   return s;
 }

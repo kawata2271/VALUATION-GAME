@@ -128,7 +128,7 @@ export const events: GameEvent[] = [
     choices: [
       {
         label: '全社オフサイト実施',
-        description: '$50Kでチームリトリートを開催',
+        description: '¥50Kでチームリトリートを開催',
         effect: { cash: -50000, moraleDelta: 25, npsDelta: 3, message: 'オフサイトでチームが再活性化！' },
       },
       {
@@ -277,12 +277,12 @@ export const events: GameEvent[] = [
     choices: [
       {
         label: '即座に対応',
-        description: '$80Kかけてコンプライアンス対応',
+        description: '¥80Kかけてコンプライアンス対応',
         effect: { cash: -80000, brandDelta: 10, npsDelta: 3, message: '迅速な規制対応でエンタープライズからの信頼UP' },
       },
       {
         label: '最低限の対応',
-        description: '$20Kで最低限の対応',
+        description: '¥20Kで最低限の対応',
         effect: { cash: -20000, churnDelta: 0.3, message: '最低限の対応。一部顧客から不安の声' },
       },
     ],
@@ -317,12 +317,12 @@ export const events: GameEvent[] = [
     choices: [
       {
         label: '和解する',
-        description: '$100Kで早期和解',
+        description: '¥100Kで早期和解',
         effect: { cash: -100000, message: '和解金を支払い、訴訟から解放' },
       },
       {
         label: '戦う',
-        description: '$50Kの弁護士費用で法廷闘争',
+        description: '¥50Kの弁護士費用で法廷闘争',
         effect: { cash: -50000, moraleDelta: -5, brandDelta: 5, message: '法廷で勝訴！業界から称賛の声' },
       },
     ],

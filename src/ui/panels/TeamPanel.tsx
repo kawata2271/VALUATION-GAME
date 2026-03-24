@@ -4,6 +4,7 @@ import { roles } from '../../engine/data/roles';
 import { GRADE_COLORS } from '../../engine/data/employeeBalance';
 import { EmployeeRole, Employee, EmployeeGrade } from '../../engine/types';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatSalary } from '../../utils/currency';
 
 const roleCategories = [
   { name: 'エンジニア', prefix: 'engineer_' },
@@ -14,7 +15,6 @@ const roleCategories = [
   { name: '経営層', prefix: 'c' },
 ];
 
-const fmt = (n: number) => `$${(n / 1000).toFixed(0)}K`;
 
 const StatBar: React.FC<{ label: string; value: number; color?: string }> = ({ label, value, color = '#3498DB' }) => (
   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
@@ -86,7 +86,7 @@ export const TeamPanel: React.FC = () => {
       {tab === 'current' ? (
         <div>
           <div style={{ fontSize: 12, color: '#888', marginBottom: 12 }}>
-            年間人件費: {fmt(totalSalary)} (月額: {fmt(totalSalary / 12)})
+            年間人件費: {formatSalary(totalSalary)} (月額: {formatSalary(totalSalary / 12)})
           </div>
           {state.employees.length === 0 ? (
             <div style={{ color: '#666', padding: 20, textAlign: 'center' }}>
@@ -112,7 +112,7 @@ export const TeamPanel: React.FC = () => {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span style={{ fontSize: 10, color: '#888', fontFamily: 'monospace' }}>
-                        {fmt(emp.salaryInfo?.current ?? emp.salary)}/年
+                        {formatSalary(emp.salaryInfo?.current ?? emp.salary)}/年
                       </span>
                       <button
                         onClick={(e) => { e.stopPropagation(); fire(emp.id); }}
@@ -160,7 +160,7 @@ export const TeamPanel: React.FC = () => {
                             <span style={{ color: '#888' }}>給与履歴:</span>
                             {emp.salaryInfo.raiseHistory.slice(-3).map((h, i) => (
                               <span key={i} style={{ marginLeft: 6 }}>
-                                M{h.month}: {fmt(h.before)}→{fmt(h.after)}
+                                M{h.month}: {formatSalary(h.before)}→{formatSalary(h.after)}
                                 <span style={{ color: h.type === 'approved' ? '#00c896' : h.type === 'rejected' ? '#ef4444' : '#f59e0b' }}>
                                   ({h.type === 'approved' ? '承認' : h.type === 'rejected' ? '却下' : '交渉'})
                                 </span>
@@ -204,7 +204,7 @@ export const TeamPanel: React.FC = () => {
                         <span style={{ fontSize: 14, fontWeight: 700 }}>{c.name}</span>
                       </div>
                       <span style={{ fontSize: 12, color: '#f59e0b', fontFamily: 'monospace' }}>
-                        {fmt(c.salary)}/年
+                        {formatSalary(c.salary)}/年
                       </span>
                     </div>
                     {/* Stats */}
@@ -236,7 +236,7 @@ export const TeamPanel: React.FC = () => {
                         cursor: state.cash >= c.salary * 0.2 ? 'pointer' : 'not-allowed',
                       }}
                     >
-                      採用する (採用費: {fmt(c.salary * 0.2)})
+                      採用する (採用費: {formatSalary(c.salary * 0.2)})
                     </button>
                   </div>
                 ))}
@@ -279,7 +279,7 @@ export const TeamPanel: React.FC = () => {
                             <div>
                               <span style={{ fontSize: 13 }}>{r.nameJa}</span>
                               <span style={{ fontSize: 10, color: '#666', marginLeft: 6 }}>
-                                基準: {fmt(r.baseSalary)}/年
+                                基準: {formatSalary(r.baseSalary)}/年
                               </span>
                               {r.unlockCondition && !available && (
                                 <span style={{ fontSize: 9, color: '#f59e0b', marginLeft: 4 }}>要: {r.unlockCondition}</span>

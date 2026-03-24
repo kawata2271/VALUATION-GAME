@@ -1,11 +1,6 @@
 import React from 'react';
 import { useGameStore } from '../hooks/useGame';
-
-const fmt = (n: number): string => {
-  if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
-  if (n >= 1e3) return `$${(n / 1e3).toFixed(0)}K`;
-  return `$${n.toFixed(0)}`;
-};
+import { formatCurrency } from '../../utils/currency';
 
 export const SalesPanel: React.FC = () => {
   const state = useGameStore(s => s.state)!;
@@ -37,15 +32,15 @@ export const SalesPanel: React.FC = () => {
           <tbody>
             <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
               <td style={{ padding: '5px 0', color: '#888' }}>ARPU</td>
-              <td style={{ textAlign: 'right', color: '#fff', fontFamily: 'monospace' }}>{fmt(state.arpu)}/月</td>
+              <td style={{ textAlign: 'right', color: '#fff', fontFamily: 'monospace' }}>{formatCurrency(state.arpu)}/月</td>
             </tr>
             <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
               <td style={{ padding: '5px 0', color: '#888' }}>CAC</td>
-              <td style={{ textAlign: 'right', color: '#fff', fontFamily: 'monospace' }}>{fmt(state.cac)}</td>
+              <td style={{ textAlign: 'right', color: '#fff', fontFamily: 'monospace' }}>{formatCurrency(state.cac)}</td>
             </tr>
             <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
               <td style={{ padding: '5px 0', color: '#888' }}>LTV</td>
-              <td style={{ textAlign: 'right', color: '#fff', fontFamily: 'monospace' }}>{fmt(ltv)}</td>
+              <td style={{ textAlign: 'right', color: '#fff', fontFamily: 'monospace' }}>{formatCurrency(ltv)}</td>
             </tr>
             <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
               <td style={{ padding: '5px 0', color: '#888' }}>LTV/CAC</td>
@@ -88,7 +83,7 @@ export const SalesPanel: React.FC = () => {
       <div style={{ marginBottom: 20 }}>
         <h4 style={{ fontSize: 13, color: '#f59e0b', margin: '0 0 10px' }}>プライシング調整</h4>
         <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>
-          現在のARPU: <strong style={{ color: '#fff' }}>${state.arpu.toFixed(0)}/月</strong>
+          現在のARPU: <strong style={{ color: '#fff' }}>¥{state.arpu.toFixed(0)}/月</strong>
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           <PriceBtn label="値上げ +10%" color="#00c896" onClick={() => adjustPrice('up', 10)} />

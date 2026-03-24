@@ -55,7 +55,7 @@ function generateAdvice(s: GameState): Advice[] {
     advice.push({
       priority: 'high', icon: '🎯',
       title: 'PMF未達成',
-      detail: `PMF達成にはコア機能2つ以上(現在${coreCount})、顧客10社以上(現在${s.customers})、MRR $5K以上(現在$${s.mrr.toFixed(0)})が必要です。`,
+      detail: `PMF達成にはコア機能2つ以上(現在${coreCount})、顧客10社以上(現在${s.customers})、MRR ¥5K以上(現在¥${s.mrr.toFixed(0)})が必要です。`,
     });
   }
 
@@ -118,7 +118,7 @@ function generateAdvice(s: GameState): Advice[] {
     advice.push({
       priority: 'medium', icon: '🚀',
       title: 'シリーズAの検討',
-      detail: 'PMF達成済み、MRR $50K以上。シリーズAラウンドの条件を満たしています。',
+      detail: 'PMF達成済み、MRR ¥50K以上。シリーズAラウンドの条件を満たしています。',
     });
   }
 
@@ -127,7 +127,7 @@ function generateAdvice(s: GameState): Advice[] {
     advice.push({
       priority: 'low', icon: '🔔',
       title: 'IPO可能',
-      detail: 'ARR $10M以上、CFO在籍。IPOの条件を満たしています。「EXIT」パネルから実行可能です。',
+      detail: 'ARR ¥10M以上、CFO在籍。IPOの条件を満たしています。「EXIT」パネルから実行可能です。',
     });
   }
 
@@ -136,7 +136,7 @@ function generateAdvice(s: GameState): Advice[] {
     advice.push({
       priority: 'low', icon: '🌍',
       title: 'グローバル展開の検討',
-      detail: 'ARR $5M以上。新市場への展開で成長を加速できます。「戦略」パネルから展開可能です。',
+      detail: 'ARR ¥5M以上。新市場への展開で成長を加速できます。「戦略」パネルから展開可能です。',
     });
   }
 

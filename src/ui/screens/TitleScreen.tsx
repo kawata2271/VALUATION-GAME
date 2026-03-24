@@ -2,12 +2,7 @@ import React, { useState } from 'react';
 import { useGameStore } from '../hooks/useGame';
 import { getSaveSlots, SaveSlot } from '../hooks/useSave';
 import { getLang, setLang, t } from '../../engine/data/i18n';
-
-const fmt = (n: number): string => {
-  if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
-  if (n >= 1e3) return `$${(n / 1e3).toFixed(0)}K`;
-  return `$${n.toFixed(0)}`;
-};
+import { formatCurrency } from '../../utils/currency';
 
 export const TitleScreen: React.FC = () => {
   const setScreen = useGameStore(s => s.setScreen);
@@ -137,7 +132,7 @@ export const TitleScreen: React.FC = () => {
                   <strong>{slot.companyName}</strong>
                   <span style={{ color: '#666', marginLeft: 8 }}>Month {slot.month}</span>
                 </span>
-                <span style={{ color: '#00c896' }}>{fmt(slot.mrr)} MRR</span>
+                <span style={{ color: '#00c896' }}>{formatCurrency(slot.mrr)} MRR</span>
               </button>
             ))}
           </div>

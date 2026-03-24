@@ -24,7 +24,7 @@ export const AnalyticsPanel: React.FC = () => {
       <h4 style={{ fontSize: 13, color: '#888', margin: '0 0 16px' }}>分析</h4>
 
       <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 12, color: '#00c896', marginBottom: 8 }}>MRR推移 ($K)</div>
+        <div style={{ fontSize: 12, color: '#00c896', marginBottom: 8 }}>MRR推移 (¥K)</div>
         <ResponsiveContainer width="100%" height={150}>
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -50,7 +50,7 @@ export const AnalyticsPanel: React.FC = () => {
       </div>
 
       <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 12, color: '#f59e0b', marginBottom: 8 }}>キャッシュ / バーン ($K)</div>
+        <div style={{ fontSize: 12, color: '#f59e0b', marginBottom: 8 }}>キャッシュ / バーン (¥K)</div>
         <ResponsiveContainer width="100%" height={150}>
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />

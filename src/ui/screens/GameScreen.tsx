@@ -26,13 +26,7 @@ import { MilestoneToast } from '../components/MilestoneToast';
 import { NewsTicker } from '../components/NewsTicker';
 import { QuarterlySummary } from '../components/QuarterlySummary';
 import { getLang, setLang, t } from '../../engine/data/i18n';
-
-const fmt = (n: number): string => {
-  if (n >= 1e9) return `$${(n / 1e9).toFixed(1)}B`;
-  if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
-  if (n >= 1e3) return `$${(n / 1e3).toFixed(0)}K`;
-  return `$${n.toFixed(0)}`;
-};
+import { formatCurrency } from '../../utils/currency';
 
 const phaseNames = ['アイデア期', 'PMF探索期', 'グロース期', 'スケール期', 'エグジット期'];
 
@@ -208,16 +202,16 @@ export const GameScreen: React.FC = () => {
         <div style={{ flex: 1, overflow: 'auto', padding: 16 }}>
           {/* KPI Row */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140, 1fr))', gap: 10, marginBottom: 16 }}>
-            <KPICard label="MRR" value={fmt(state.mrr)} sub={`ARR ${fmt(arr)}`} color="#00c896" delta={mrrDelta} deltaFmt={fmt(mrrDelta)} />
+            <KPICard label="MRR" value={formatCurrency(state.mrr)} sub={`ARR ${formatCurrency(arr)}`} color="#00c896" delta={mrrDelta} deltaFmt={formatCurrency(mrrDelta)} />
             <KPICard label="顧客数" value={`${state.customers}社`} sub={`Churn ${state.churnRate.toFixed(1)}%`} color="#6366f1" delta={custDelta} deltaFmt={`${custDelta}`} />
             <KPICard
               label="キャッシュ"
-              value={fmt(state.cash)}
-              sub={`Net ${state.mrr - state.burn >= 0 ? '+' : ''}${fmt(state.mrr - state.burn)}/月`}
+              value={formatCurrency(state.cash)}
+              sub={`Net ${state.mrr - state.burn >= 0 ? '+' : ''}${formatCurrency(state.mrr - state.burn)}/月`}
               color={state.cash < state.burn * 3 ? '#ef4444' : '#00c896'}
               warn={state.cash < state.burn * 3}
               delta={cashDelta}
-              deltaFmt={fmt(cashDelta)}
+              deltaFmt={formatCurrency(cashDelta)}
             />
           </div>
 
@@ -245,11 +239,11 @@ export const GameScreen: React.FC = () => {
             display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100, 1fr))',
             gap: 8, marginBottom: 16,
           }}>
-            <MiniKPI label="CAC" value={fmt(state.cac)} />
-            <MiniKPI label="ARPU" value={fmt(state.arpu)} />
+            <MiniKPI label="CAC" value={formatCurrency(state.cac)} />
+            <MiniKPI label="ARPU" value={formatCurrency(state.arpu)} />
             <MiniKPI label="LTV/CAC" value={state.cac > 0 ? ((state.arpu / (state.churnRate / 100)) / state.cac).toFixed(1) : '-'} />
             <MiniKPI label="NDR" value={`${state.ndr.toFixed(0)}%`} />
-            <MiniKPI label="評価額" value={fmt(state.valuation)} color="#ffd700" />
+            <MiniKPI label="評価額" value={formatCurrency(state.valuation)} color="#ffd700" />
             <MiniKPI label="持分" value={`${state.founderEquity.toFixed(0)}%`} color="#ec4899" />
           </div>
 
@@ -375,7 +369,7 @@ export const GameScreen: React.FC = () => {
                         <div style={{ fontSize: 13, fontWeight: 600 }}>Slot {slotId}</div>
                         {slot ? (
                           <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>
-                            {slot.companyName} | Month {slot.month} | {fmt(slot.mrr)} MRR
+                            {slot.companyName} | Month {slot.month} | {formatCurrency(slot.mrr)} MRR
                             <br />
                             <span style={{ fontSize: 10, color: '#555' }}>{new Date(slot.savedAt).toLocaleString('ja-JP')}</span>
                           </div>
