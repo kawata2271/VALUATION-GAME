@@ -15,6 +15,8 @@ import { techStacks } from './data/techstacks';
 import { generateInvestor } from './data/investors';
 import { checkAchievements } from './data/achievements';
 import { defaultRegions } from './data/regions';
+import { generateEmployee, generateCandidates, migrateEmployee } from './employeeGenerator';
+import { RAISE_INTERVAL, LOYALTY_RESIGN_THRESHOLD, LOYALTY_CHANGES, RAISE_BASE_RATES } from './data/employeeBalance';
 import { scenarios } from './data/scenarios';
 import { generateRivals, simulateRivals } from './data/rivals';
 import { generateNewsFeed } from './data/newsfeed';
@@ -133,6 +135,7 @@ export function createInitialState(
     multiProductCount: 0,
     rivals: generateRivals(vertical),
     newsFeed: [],
+    pendingRaises: null,
   };
 
   // Apply scenario overrides
@@ -266,6 +269,7 @@ export function advanceTurn(state: GameState): GameState {
   if (s.cofounder === 'tech') tdDelta *= 0.8;
   if (s.founderType === 'sales') tdDelta *= 1.3;
   tdDelta *= ts.techDebtRate; // tech stack modifier
+  if (s.employees.some(e => e.specialAbility?.id === 'debugger')) tdDelta *= 0.7; // debugger ability
   s.techDebt = Math.max(0, Math.min(100, s.techDebt + tdDelta));
 
   // --- PMF Check ---
@@ -363,10 +367,14 @@ export function advanceTurn(state: GameState): GameState {
   const domainExpertDiscount = s.cofounder === 'domain' ? 0.8 : 1.0;
   s.cac = v.baseCac * salesEfficiency * brandDiscount * domainExpertDiscount * (1 + s.competitorPressure / 100) * (1 / economyFactor);
 
-  // --- Burn rate ---
-  const totalSalaries = s.employees.reduce((sum, e) => sum + e.salary, 0);
+  // --- Burn rate (individual salaries) ---
+  let totalSalaries = s.employees.reduce((sum, e) => sum + (e.salaryInfo?.current ?? e.salary), 0);
+  // Optimizer ability: -5% total salary
+  if (s.employees.some(e => e.specialAbility?.id === 'optimizer')) totalSalaries *= 0.95;
   const monthlyPayroll = totalSalaries / 12;
-  const infraCost = Math.max(200, s.customers * 1.5) + (ts.infraCostExtra / 12);
+  let infraCost = Math.max(200, s.customers * 1.5) + (ts.infraCostExtra / 12);
+  // Automator ability: -15% infra cost
+  if (s.employees.some(e => e.specialAbility?.id === 'automator')) infraCost *= 0.85;
   const marketingSpend = getMarketingCount(s) * 2000;
   // Sales/marketing acquisition cost (simplified: part of CAC is already in salaries)
   const acquisitionSpend = newCustomers * Math.min(s.cac * 0.3, 200);
@@ -470,6 +478,18 @@ export function advanceTurn(state: GameState): GameState {
     s.morale = Math.max(0, s.morale - 2);
   }
 
+  // --- Employee ability effects ---
+  const abilityState = applyAbilityEffects(s);
+  s.nps = abilityState.nps;
+  s.brand = abilityState.brand;
+  s.morale = abilityState.morale;
+  s.employees = abilityState.employees;
+
+  // --- Raise system (every 6 months, after month 6) ---
+  if (s.month > 6 && s.month % RAISE_INTERVAL === 0 && s.employees.length > 0 && !s.pendingRaises) {
+    s.pendingRaises = generateRaiseRequests(s);
+  }
+
   // --- Founder skill growth ---
   if (s.employees.length > 0) s.founderSkills = { ...s.founderSkills, leadership: s.founderSkills.leadership + 0.5 };
   if (completed.length > 0) s.founderSkills = { ...s.founderSkills, product: s.founderSkills.product + 1 };
@@ -565,25 +585,20 @@ export function dismissEvent(state: GameState): GameState {
   return s;
 }
 
-// ===== Hiring =====
+// ===== Hiring (Revamped) =====
 
-export function hireEmployee(state: GameState, role: EmployeeRole): GameState {
+export function hireEmployee(state: GameState, role: EmployeeRole, candidate?: Employee): GameState {
   const s = { ...state };
   const roleInfo = roles[role];
-  const hiringCost = roleInfo.baseSalary * 0.2;
 
+  // Use provided candidate or generate one
+  const hasHeadhunter = s.employees.some(e => e.specialAbility?.id === 'headhunter');
+  const employee = candidate
+    ? { ...candidate, hiredMonth: s.month }
+    : generateEmployee(role, s.month, s.nextEmployeeId, hasHeadhunter);
+
+  const hiringCost = employee.salary * 0.2;
   if (s.cash < hiringCost) return s;
-
-  // Trait assignment
-  let trait: Employee['trait'] = null;
-  const traitRoll = Math.random();
-  if (traitRoll < 0.10) {
-    const positiveTraits: Employee['trait'][] = ['10x_engineer', 'closer', 'mood_maker', 'mentor', 'problem_solver'];
-    trait = positiveTraits[Math.floor(Math.random() * positiveTraits.length)];
-  } else if (traitRoll < 0.25) {
-    const negativeTraits: Employee['trait'][] = ['toxic_genius', 'job_hopper', 'underperformer', 'politician', 'burnout_risk'];
-    trait = negativeTraits[Math.floor(Math.random() * negativeTraits.length)];
-  }
 
   // Stock options
   const empCount = s.employees.length + 1;
@@ -591,31 +606,22 @@ export function hireEmployee(state: GameState, role: EmployeeRole): GameState {
   if (empCount <= 5) stockOptions = 1.0;
   else if (empCount <= 20) stockOptions = 0.25;
   else stockOptions = 0.05;
+  if (['cto', 'cfo', 'coo'].includes(role)) stockOptions = 2.0;
 
-  if (role.startsWith('c') && ['cto', 'cfo', 'coo'].includes(role)) {
-    stockOptions = 2.0;
-  }
-
-  const employee: Employee = {
-    id: `emp_${s.nextEmployeeId}`,
-    name: generateName(),
-    role,
-    salary: roleInfo.baseSalary,
-    trait,
-    hiredMonth: s.month,
-    stockOptions,
-  };
+  employee.stockOptions = stockOptions;
+  employee.id = `emp_${s.nextEmployeeId}`;
 
   s.employees = [...s.employees, employee];
   s.nextEmployeeId += 1;
   s.cash -= hiringCost;
   s.optionPool = Math.max(0, s.optionPool - stockOptions);
 
-  const traitMsg = trait ? ` (特性: ${getTraitLabel(trait)})` : '';
+  const gradeLabel = employee.grade;
+  const abilityMsg = employee.specialAbility ? ` [${employee.specialAbility.name}]` : '';
   s.eventLog = [...s.eventLog, {
     month: s.month,
     title: `${roleInfo.nameJa}を採用`,
-    effect: `${employee.name}${traitMsg}`,
+    effect: `${employee.name} (${gradeLabel}ランク, $${(employee.salary / 1000).toFixed(0)}K/年)${abilityMsg}`,
   }];
 
   return s;
@@ -1081,10 +1087,197 @@ export function launchNewProduct(state: GameState): GameState {
   return s;
 }
 
+// ===== Ability Effects (applied in advanceTurn) =====
+
+export function applyAbilityEffects(state: GameState): GameState {
+  const s = { ...state };
+  const emps = s.employees;
+
+  for (const emp of emps) {
+    if (!emp.specialAbility) continue;
+    switch (emp.specialAbility.id) {
+      case 'debugger':
+        // Tech debt reduction applied in tech debt section
+        break;
+      case 'visionary':
+        s.nps = Math.min(100, s.nps + 0.3);
+        break;
+      case 'branding':
+        s.brand = Math.min(100, s.brand + 0.3);
+        break;
+      case 'morale_boost':
+        s.morale = Math.min(100, s.morale + 0.5);
+        break;
+    }
+  }
+
+  // Mentor: grow C/D rank employees
+  const hasMentor = emps.some(e => e.specialAbility?.id === 'mentor_ability');
+  if (hasMentor) {
+    s.employees = s.employees.map(emp => {
+      if (emp.grade === 'C' || emp.grade === 'D') {
+        return {
+          ...emp,
+          stats: {
+            sales: Math.min(100, emp.stats.sales + 1),
+            tech: Math.min(100, emp.stats.tech + 1),
+            management: Math.min(100, emp.stats.management + 1),
+            creativity: Math.min(100, emp.stats.creativity + 1),
+            loyalty: Math.min(100, emp.stats.loyalty + 1),
+          },
+        };
+      }
+      return emp;
+    });
+  }
+
+  // Leader: 10% boost to all stats (affects calculations via stat sums)
+  // Applied implicitly through stat-weighted calculations
+
+  return s;
+}
+
+// ===== Raise System =====
+
+export function generateRaiseRequests(state: GameState): import('./types').RaiseRequest[] {
+  return state.employees.map(emp => {
+    let raiseRate = RAISE_BASE_RATES[emp.grade];
+    // Loyalty adjustment
+    const loyaltyMod = 1.0 - (emp.stats.loyalty - 50) * 0.005;
+    raiseRate *= Math.max(0.5, Math.min(1.5, loyaltyMod));
+    // Tenure adjustment
+    const tenure = state.month - emp.hiredMonth;
+    if (tenure > 12) raiseRate *= 1.1;
+    // Random variance
+    raiseRate *= 0.8 + Math.random() * 0.4;
+    // Frugal ability
+    if (emp.specialAbility?.id === 'frugal') raiseRate *= 0.85;
+
+    const requestedSalary = Math.round(emp.salaryInfo.current * (1 + raiseRate));
+    const avgStat = Object.values(emp.stats).reduce((a, b) => a + b, 0) / 5;
+    const contribution = avgStat >= 80 ? 5 : avgStat >= 65 ? 4 : avgStat >= 50 ? 3 : avgStat >= 35 ? 2 : 1;
+
+    return {
+      employeeId: emp.id,
+      employeeName: emp.name,
+      grade: emp.grade,
+      currentSalary: emp.salaryInfo.current,
+      requestedSalary,
+      raiseRate: Math.round(raiseRate * 1000) / 10,
+      contributionScore: contribution,
+    };
+  });
+}
+
+export function processRaise(
+  state: GameState,
+  employeeId: string,
+  decision: 'approved' | 'negotiated' | 'rejected',
+): GameState {
+  const s = { ...state };
+  s.employees = s.employees.map(emp => {
+    if (emp.id !== employeeId) return emp;
+
+    const request = generateRaiseRequests(state).find(r => r.employeeId === employeeId);
+    if (!request) return emp;
+
+    let newSalary = emp.salaryInfo.current;
+    let loyaltyDelta = 0;
+
+    switch (decision) {
+      case 'approved':
+        newSalary = request.requestedSalary;
+        loyaltyDelta = LOYALTY_CHANGES.approved;
+        break;
+      case 'negotiated':
+        newSalary = Math.round(emp.salaryInfo.current + (request.requestedSalary - emp.salaryInfo.current) * 0.5);
+        loyaltyDelta = Math.random() < 0.5 ? LOYALTY_CHANGES.negotiatedPenalty : 0;
+        break;
+      case 'rejected':
+        loyaltyDelta = LOYALTY_CHANGES.rejected;
+        break;
+    }
+
+    return {
+      ...emp,
+      salary: newSalary,
+      salaryInfo: {
+        ...emp.salaryInfo,
+        current: newSalary,
+        raiseHistory: [...emp.salaryInfo.raiseHistory, {
+          month: s.month,
+          before: emp.salaryInfo.current,
+          after: newSalary,
+          type: decision,
+        }],
+      },
+      stats: {
+        ...emp.stats,
+        loyalty: Math.max(0, Math.min(100, emp.stats.loyalty + loyaltyDelta)),
+      },
+    };
+  });
+
+  return s;
+}
+
+export function processAllRaises(
+  state: GameState,
+  decisions: Record<string, 'approved' | 'negotiated' | 'rejected'>,
+): GameState {
+  let s = { ...state };
+  for (const [empId, decision] of Object.entries(decisions)) {
+    s = processRaise(s, empId, decision);
+  }
+
+  // Check resignations after raise processing
+  const resignees: string[] = [];
+  s.employees = s.employees.filter(emp => {
+    if (emp.stats.loyalty > LOYALTY_RESIGN_THRESHOLD) return true;
+    const resignChance = (LOYALTY_RESIGN_THRESHOLD - emp.stats.loyalty) * 0.03;
+    if (Math.random() < resignChance) {
+      resignees.push(emp.name);
+      return false;
+    }
+    return true;
+  });
+
+  if (resignees.length > 0) {
+    s.morale = Math.max(0, s.morale - resignees.length * 3);
+    s.eventLog = [...s.eventLog, {
+      month: s.month,
+      title: '退職者発生',
+      effect: `${resignees.join('、')}が退職しました（忠誠度低下による）`,
+    }];
+  }
+
+  s.eventLog = [...s.eventLog, {
+    month: s.month,
+    title: '昇給処理完了',
+    effect: `${Object.keys(decisions).length}名の昇給を処理`,
+  }];
+
+  return s;
+}
+
+// ===== Data Migration =====
+
+export function migrateGameState(state: GameState): GameState {
+  if (!state.employees) return state;
+  return {
+    ...state,
+    employees: state.employees.map(e => migrateEmployee(e)),
+    pendingRaises: state.pendingRaises ?? null,
+  };
+}
+
 // Re-export data accessors
 export { features, getAvailableFeatures, verticals, founders, roles, techStacks };
 export { cofounders } from './data/cofounders';
 export { achievements } from './data/achievements';
 export { archetypeLabels } from './data/investors';
 export { scenarios } from './data/scenarios';
+export { generateCandidates } from './employeeGenerator';
+export { GRADE_COLORS } from './data/employeeBalance';
+export { SPECIAL_ABILITIES } from './data/specialAbilities';
 export type { FundingOption };

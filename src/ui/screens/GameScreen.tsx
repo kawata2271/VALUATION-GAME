@@ -21,6 +21,7 @@ import { Tutorial } from '../components/Tutorial';
 import { BoardMeeting } from '../components/BoardMeeting';
 import { AchievementToast } from '../components/AchievementToast';
 import { Advisor } from '../components/Advisor';
+import { RaiseEventModal } from '../components/RaiseEventModal';
 import { MilestoneToast } from '../components/MilestoneToast';
 import { NewsTicker } from '../components/NewsTicker';
 import { QuarterlySummary } from '../components/QuarterlySummary';
@@ -54,6 +55,7 @@ export const GameScreen: React.FC = () => {
   const nextTurn = useGameStore(s => s.nextTurn);
   const handleChoice = useGameStore(s => s.handleEventChoice);
   const handleDismiss = useGameStore(s => s.handleEventDismiss);
+  const submitRaises = useGameStore(s => s.submitRaises);
   const saveGame = useGameStore(s => s.saveGame);
   const [saveMsg, setSaveMsg] = useState('');
   const [soundOn, setSoundOn] = useState(Sound.isEnabled());
@@ -115,12 +117,12 @@ export const GameScreen: React.FC = () => {
     return () => { if (autoRef.current) clearInterval(autoRef.current); };
   }, [autoSpeed, state.pendingEvent, state.boardMeetingDue]);
 
-  // Stop auto when event, board meeting, quarterly, or game over
+  // Stop auto when event, board meeting, quarterly, raises, or game over
   React.useEffect(() => {
-    if (state.pendingEvent || state.boardMeetingDue || state.gameOver || showQuarterly) {
+    if (state.pendingEvent || state.boardMeetingDue || state.gameOver || showQuarterly || state.pendingRaises) {
       setAutoSpeed(0);
     }
-  }, [state.pendingEvent, state.boardMeetingDue, state.gameOver, showQuarterly]);
+  }, [state.pendingEvent, state.boardMeetingDue, state.gameOver, showQuarterly, state.pendingRaises]);
 
   // Keyboard shortcuts
   React.useEffect(() => {
@@ -415,6 +417,14 @@ export const GameScreen: React.FC = () => {
 
       {/* Achievement Toast */}
       <AchievementToast achievementIds={state.achievements || []} previousCount={prevAchCount} />
+
+      {/* Raise Event */}
+      {state.pendingRaises && state.pendingRaises.length > 0 && (
+        <RaiseEventModal
+          requests={state.pendingRaises}
+          onSubmit={(decisions) => submitRaises(decisions)}
+        />
+      )}
 
       {/* Board Meeting */}
       {state.boardMeetingDue && !state.pendingEvent && (

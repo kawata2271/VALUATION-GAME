@@ -60,14 +60,59 @@ export interface CompletedFeature {
   completedMonth: number;
 }
 
+// ===== Employee Grade & Stats System =====
+export type EmployeeGrade = 'S' | 'A' | 'B' | 'C' | 'D';
+
+export interface EmployeeStats {
+  sales: number;       // 営業力 (0-100)
+  tech: number;        // 技術力 (0-100)
+  management: number;  // 管理力 (0-100)
+  creativity: number;  // 創造力 (0-100)
+  loyalty: number;     // 忠誠度 (0-100)
+}
+
+export interface SpecialAbilityDef {
+  id: string;
+  name: string;
+  description: string;
+  category: 'sales' | 'tech' | 'management' | 'creativity' | 'special';
+  minGrade: EmployeeGrade;
+}
+
+export interface SalaryInfo {
+  base: number;
+  current: number;
+  raiseHistory: Array<{
+    month: number;
+    before: number;
+    after: number;
+    type: 'approved' | 'negotiated' | 'rejected';
+  }>;
+}
+
+export interface RaiseRequest {
+  employeeId: string;
+  employeeName: string;
+  grade: EmployeeGrade;
+  currentSalary: number;
+  requestedSalary: number;
+  raiseRate: number;
+  contributionScore: number;
+}
+
 export interface Employee {
   id: string;
   name: string;
   role: EmployeeRole;
-  salary: number;
+  salary: number;           // 後方互換: SalaryInfo.currentと同期
   trait?: EmployeeTrait;
   hiredMonth: number;
   stockOptions: number;
+  // Phase 2 extensions
+  grade: EmployeeGrade;
+  stats: EmployeeStats;
+  specialAbility: SpecialAbilityDef | null;
+  salaryInfo: SalaryInfo;
 }
 
 export type EmployeeRole =
@@ -261,6 +306,7 @@ export interface GameState {
   multiProductCount: number;
   rivals: RivalCompany[];
   newsFeed: string[];
+  pendingRaises: RaiseRequest[] | null;
 }
 
 export interface RoleInfo {

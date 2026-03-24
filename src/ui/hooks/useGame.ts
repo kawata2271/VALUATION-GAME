@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import {
   GameState, VerticalId, FounderType, EmployeeRole, EventChoice,
-  TechStack, CofounderType, GameMode, Acquisition,
+  TechStack, CofounderType, GameMode, Acquisition, Employee,
 } from '../../engine/types';
 import {
   createInitialState, advanceTurn, applyEventEffect, dismissEvent,
@@ -9,7 +9,7 @@ import {
   attemptIPO, attemptMnA, continueAsPrivate, runTechDebtSprint,
   getAvailableFunding, FundingOption, changePrice, enableTier,
   startGlobalExpansion, getAcquisitionTargets, executeAcquisition,
-  launchNewProduct,
+  launchNewProduct, processAllRaises, generateCandidates, migrateGameState,
 } from '../../engine/GameEngine';
 import { autoSave, loadAutoSave, clearAutoSave, saveToSlot, loadFromSlot } from './useSave';
 import { Sound } from './useSound';
@@ -52,6 +52,10 @@ interface GameStore {
   buyCompany: (acquisition: Acquisition) => void;
   newProduct: () => void;
   getAcqTargets: () => Acquisition[];
+
+  hireCandidate: (candidate: Employee) => void;
+  getCandidates: (role: EmployeeRole, count: number) => Employee[];
+  submitRaises: (decisions: Record<string, 'approved' | 'negotiated' | 'rejected'>) => void;
 
   saveGame: (slotId: number) => void;
   loadGame: (slotId: number) => void;
@@ -251,6 +255,31 @@ export const useGameStore = create<GameStore>((set, get) => ({
     return getAcquisitionTargets(state);
   },
 
+  hireCandidate: (candidate) => {
+    const { state } = get();
+    if (!state) return;
+    Sound.hire();
+    const newState = hireEmployee(state, candidate.role, candidate);
+    autoSave(newState);
+    set({ state: newState });
+  },
+
+  getCandidates: (role, count) => {
+    const { state } = get();
+    if (!state) return [];
+    const hasHeadhunter = state.employees.some(e => e.specialAbility?.id === 'headhunter');
+    return generateCandidates(role, count, state.month, state.nextEmployeeId, hasHeadhunter);
+  },
+
+  submitRaises: (decisions) => {
+    const { state } = get();
+    if (!state) return;
+    const newState = processAllRaises(state, decisions);
+    newState.pendingRaises = null;
+    autoSave(newState);
+    set({ state: newState });
+  },
+
   saveGame: (slotId) => {
     const { state } = get();
     if (!state) return;
@@ -267,7 +296,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   resumeAutoSave: () => {
     const loaded = loadAutoSave();
     if (loaded) {
-      set({ state: loaded, screen: loaded.gameOver ? 'gameover' : 'game', panel: null });
+      const migrated = migrateGameState(loaded);
+      set({ state: migrated, screen: migrated.gameOver ? 'gameover' : 'game', panel: null });
     }
   },
 
