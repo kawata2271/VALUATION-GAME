@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import {
   GameState, VerticalId, FounderType, EmployeeRole, EventChoice,
   TechStack, CofounderType, GameMode, Acquisition, Employee,
+  PivotOption, BusinessDomainId, SubBusiness,
 } from '../../engine/types';
 import {
   createInitialState, advanceTurn, applyEventEffect, dismissEvent,
@@ -10,6 +11,8 @@ import {
   getAvailableFunding, FundingOption, changePrice, enableTier,
   startGlobalExpansion, getAcquisitionTargets, executeAcquisition,
   launchNewProduct, processAllRaises, generateCandidates, migrateGameState,
+  shouldSuggestPivot, getPivotOptions, executePivot,
+  canLaunchSubBusiness, launchSubBusiness, withdrawSubBusiness,
 } from '../../engine/GameEngine';
 import { autoSave, loadAutoSave, clearAutoSave, saveToSlot, loadFromSlot } from './useSave';
 import { Sound } from './useSound';
@@ -56,6 +59,16 @@ interface GameStore {
   hireCandidate: (candidate: Employee) => void;
   getCandidates: (role: EmployeeRole, count: number) => Employee[];
   submitRaises: (decisions: Record<string, 'approved' | 'negotiated' | 'rejected'>) => void;
+
+  // Pivot
+  checkPivotSuggestion: () => boolean;
+  getPivotOpts: () => PivotOption[];
+  doPivot: (option: PivotOption) => void;
+
+  // Sub-business
+  canLaunchSub: () => boolean;
+  launchSub: (domain: BusinessDomainId, name: string, budget: number, team: number) => void;
+  withdrawSub: (subId: string) => void;
 
   saveGame: (slotId: number) => void;
   loadGame: (slotId: number) => void;
@@ -276,6 +289,50 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!state) return;
     const newState = processAllRaises(state, decisions);
     newState.pendingRaises = null;
+    autoSave(newState);
+    set({ state: newState });
+  },
+
+  checkPivotSuggestion: () => {
+    const { state } = get();
+    if (!state) return false;
+    return shouldSuggestPivot(state);
+  },
+
+  getPivotOpts: () => {
+    const { state } = get();
+    if (!state) return [];
+    return getPivotOptions(state);
+  },
+
+  doPivot: (option) => {
+    const { state } = get();
+    if (!state) return;
+    Sound.criticalEvent();
+    const newState = executePivot(state, option);
+    autoSave(newState);
+    set({ state: newState });
+  },
+
+  canLaunchSub: () => {
+    const { state } = get();
+    if (!state) return false;
+    return canLaunchSubBusiness(state);
+  },
+
+  launchSub: (domain, name, budget, team) => {
+    const { state } = get();
+    if (!state) return;
+    Sound.featureRelease();
+    const newState = launchSubBusiness(state, domain, name, budget, team);
+    autoSave(newState);
+    set({ state: newState });
+  },
+
+  withdrawSub: (subId) => {
+    const { state } = get();
+    if (!state) return;
+    const newState = withdrawSubBusiness(state, subId);
     autoSave(newState);
     set({ state: newState });
   },

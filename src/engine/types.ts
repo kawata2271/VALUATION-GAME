@@ -307,6 +307,75 @@ export interface GameState {
   rivals: RivalCompany[];
   newsFeed: string[];
   pendingRaises: RaiseRequest[] | null;
+
+  // Phase 4: Pivot & Multi-business
+  subBusinesses: SubBusiness[];
+  pivotHistory: PivotRecord[];
+  pendingPivot: PivotOption | null;
+  mrrDeclineStreak: number;
+  highChurnStreak: number;
+}
+
+// ===== Phase 4: Pivot & Multi-business =====
+
+export type PivotType =
+  | 'zoom_in' | 'zoom_out' | 'customer_segment' | 'channel'
+  | 'revenue_model' | 'tech_architecture' | 'platform' | 'domain_change';
+
+export type BusinessDomainId =
+  | 'hrtech' | 'fintech' | 'edtech' | 'healthtech' | 'legaltech'
+  | 'martech' | 'logitech' | 'foodtech' | 'proptech' | 'agritech'
+  | 'insurtech' | 'retailtech' | 'securitytech' | 'ai_saas' | 'vertical_saas'
+  | 'crm' | 'devtools' | 'spacetech' | 'web3' | 'cleantech';
+
+export interface BusinessDomain {
+  id: BusinessDomainId;
+  nameJa: string;
+  tam: number;
+  growthRate: number;
+  avgArpu: number;
+  avgChurn: number;
+  competitorCount: number;
+  difficulty: number;
+}
+
+export interface PivotOption {
+  type: PivotType;
+  nameJa: string;
+  description: string;
+  targetDomain: BusinessDomainId;
+  costRate: number;        // % of cash consumed
+  teamLossRate: number;    // % of employees lost
+  mrrRetainRate: number;   // % of MRR retained
+  devMonths: number;       // turns needed
+  techCarryOver: number;   // % of tech assets retained
+  brandCarryOver: number;  // % of brand retained
+}
+
+export interface PivotRecord {
+  month: number;
+  fromDomain: string;
+  toDomain: BusinessDomainId;
+  type: PivotType;
+}
+
+export type SubBusinessPhase = 'research' | 'mvp' | 'pmf' | 'growth' | 'failed';
+
+export interface SubBusiness {
+  id: string;
+  name: string;
+  domain: BusinessDomainId;
+  phase: SubBusinessPhase;
+  phaseMonthsLeft: number;
+  mrr: number;
+  customers: number;
+  arpu: number;
+  churnRate: number;
+  teamAllocated: number;  // number of employees assigned
+  monthlyBudget: number;
+  pmfScore: number;       // 0-100
+  startedMonth: number;
+  totalInvested: number;
 }
 
 export interface RoleInfo {

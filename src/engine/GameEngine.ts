@@ -20,6 +20,9 @@ import { RAISE_INTERVAL, LOYALTY_RESIGN_THRESHOLD, LOYALTY_CHANGES, RAISE_BASE_R
 import { scenarios } from './data/scenarios';
 import { generateRivals, simulateRivals } from './data/rivals';
 import { generateNewsFeed } from './data/newsfeed';
+import { allPhase4Events } from './data/events/index';
+import { pivotTypes } from './data/pivots';
+import { businessDomains } from './data/businesses';
 
 // ===== Initial State =====
 
@@ -136,6 +139,11 @@ export function createInitialState(
     rivals: generateRivals(vertical),
     newsFeed: [],
     pendingRaises: null,
+    subBusinesses: [],
+    pivotHistory: [],
+    pendingPivot: null,
+    mrrDeclineStreak: 0,
+    highChurnStreak: 0,
   };
 
   // Apply scenario overrides
@@ -485,6 +493,61 @@ export function advanceTurn(state: GameState): GameState {
   s.morale = abilityState.morale;
   s.employees = abilityState.employees;
 
+  // --- Pivot condition tracking ---
+  const prevSnap = s.history.length >= 2 ? s.history[s.history.length - 1] : null;
+  if (prevSnap && s.mrr < prevSnap.mrr) {
+    s.mrrDeclineStreak += 1;
+  } else {
+    s.mrrDeclineStreak = 0;
+  }
+  if (effectiveChurn * 100 >= 10) {
+    s.highChurnStreak += 1;
+  } else {
+    s.highChurnStreak = 0;
+  }
+
+  // --- Sub-business simulation ---
+  s.subBusinesses = s.subBusinesses.map(sb => {
+    if (sb.phase === 'failed') return sb;
+    const updated = { ...sb };
+
+    // Phase progression
+    if (updated.phaseMonthsLeft > 0) {
+      updated.phaseMonthsLeft -= 1;
+      if (updated.phaseMonthsLeft <= 0) {
+        if (updated.phase === 'research') { updated.phase = 'mvp'; updated.phaseMonthsLeft = 3; }
+        else if (updated.phase === 'mvp') { updated.phase = 'pmf'; updated.phaseMonthsLeft = 4; }
+        else if (updated.phase === 'pmf') {
+          if (updated.pmfScore >= 50) { updated.phase = 'growth'; updated.phaseMonthsLeft = 0; }
+          else { updated.phase = 'failed'; }
+        }
+      }
+    }
+
+    // Revenue growth (growth phase only)
+    if (updated.phase === 'growth') {
+      const dom = businessDomains[updated.domain];
+      const growthRate = (dom?.growthRate || 15) / 100 / 12;
+      const newCust = Math.max(1, Math.floor(updated.customers * growthRate + Math.random() * 2));
+      updated.customers += newCust;
+      updated.mrr = updated.customers * updated.arpu;
+    }
+
+    // PMF score growth during pmf phase
+    if (updated.phase === 'pmf') {
+      updated.pmfScore = Math.min(100, updated.pmfScore + 5 + Math.floor(Math.random() * 10));
+    }
+
+    // Budget consumption
+    updated.totalInvested += updated.monthlyBudget;
+
+    return updated;
+  });
+
+  // Add sub-business MRR to main
+  const subMrr = s.subBusinesses.reduce((sum, sb) => sum + (sb.phase === 'growth' ? sb.mrr : 0), 0);
+  s.mrr += subMrr;
+
   // --- Raise system (every 6 months, after month 6) ---
   if (s.month > 6 && s.month % RAISE_INTERVAL === 0 && s.employees.length > 0 && !s.pendingRaises) {
     s.pendingRaises = generateRaiseRequests(s);
@@ -526,7 +589,7 @@ export function advanceTurn(state: GameState): GameState {
 // ===== Event System =====
 
 function tryTriggerEvent(state: GameState): (GameEvent & { instanceId: string }) | null {
-  const allEvents = [...events, ...phase2Events];
+  const allEvents = [...events, ...phase2Events, ...allPhase4Events];
 
   // Filter out org wall events that have already been resolved
   const eligible = allEvents.filter(e => {
@@ -1271,6 +1334,144 @@ export function migrateGameState(state: GameState): GameState {
   };
 }
 
+// ===== Pivot System =====
+
+export function shouldSuggestPivot(state: GameState): boolean {
+  const runway = state.burn > 0 ? state.cash / state.burn : 999;
+  return (
+    state.mrrDeclineStreak >= 3 ||
+    state.highChurnStreak >= 2 ||
+    runway <= 6 ||
+    (!state.pmfAchieved && state.month >= 12)
+  );
+}
+
+export function getPivotOptions(state: GameState): import('./types').PivotOption[] {
+  return pivotTypes.map(pt => {
+    const domains = Object.keys(businessDomains).filter(d => d !== state.vertical) as import('./types').BusinessDomainId[];
+    const targetDomain = domains[Math.floor(Math.random() * domains.length)];
+    return {
+      type: pt.type,
+      nameJa: pt.nameJa,
+      description: pt.description,
+      targetDomain,
+      costRate: pt.costRate,
+      teamLossRate: pt.teamLossRate,
+      mrrRetainRate: pt.mrrRetainRate,
+      devMonths: pt.devMonths,
+      techCarryOver: pt.techCarryOver,
+      brandCarryOver: pt.brandCarryOver,
+    };
+  });
+}
+
+export function executePivot(state: GameState, option: import('./types').PivotOption): GameState {
+  const s = { ...state };
+
+  // Record pivot
+  s.pivotHistory = [...s.pivotHistory, {
+    month: s.month,
+    fromDomain: s.vertical,
+    toDomain: option.targetDomain,
+    type: option.type,
+  }];
+  s.pivotCount += 1;
+
+  // Costs
+  s.cash = Math.max(0, s.cash - s.cash * option.costRate);
+
+  // MRR retention
+  s.mrr *= option.mrrRetainRate;
+  s.customers = Math.floor(s.customers * option.mrrRetainRate);
+
+  // Team loss
+  const lostCount = Math.floor(s.employees.length * option.teamLossRate);
+  if (lostCount > 0) {
+    s.employees = s.employees.slice(0, s.employees.length - lostCount);
+  }
+
+  // Brand/tech carry over
+  s.brand = Math.floor(s.brand * option.brandCarryOver);
+  s.techDebt = Math.min(100, s.techDebt + (100 - s.techDebt) * (1 - option.techCarryOver) * 0.5);
+
+  // Change vertical
+  s.vertical = option.targetDomain as any;
+  s.pmfAchieved = false;
+  s.mrrDeclineStreak = 0;
+  s.highChurnStreak = 0;
+
+  // Update ARPU from new domain
+  const dom = businessDomains[option.targetDomain];
+  if (dom) s.arpu = dom.avgArpu;
+
+  s.morale = Math.max(10, s.morale - 15);
+  s.pendingPivot = null;
+
+  s.eventLog = [...s.eventLog, {
+    month: s.month,
+    title: `ピボット実行: ${option.nameJa}`,
+    effect: `${dom?.nameJa || option.targetDomain}に事業転換。MRR ${Math.round(option.mrrRetainRate * 100)}%引継、開発${option.devMonths}ヶ月`,
+  }];
+
+  return s;
+}
+
+// ===== Sub-Business System =====
+
+export function canLaunchSubBusiness(state: GameState): boolean {
+  const arr = state.mrr * 12;
+  const maxBiz = arr >= 20_000_000 ? 4 : arr >= 5_000_000 ? 3 : arr >= 1_000_000 ? 2 : 0;
+  return state.subBusinesses.filter(sb => sb.phase !== 'failed').length < maxBiz && arr >= 1_000_000 && state.employees.length >= 20;
+}
+
+export function launchSubBusiness(state: GameState, domain: import('./types').BusinessDomainId, name: string, budget: number, teamSize: number): GameState {
+  const s = { ...state };
+  if (!canLaunchSubBusiness(s)) return s;
+  if (s.cash < budget * 3) return s;
+
+  const dom = businessDomains[domain];
+  const sb: import('./types').SubBusiness = {
+    id: `sub_${Date.now()}`,
+    name,
+    domain,
+    phase: 'research',
+    phaseMonthsLeft: 2,
+    mrr: 0,
+    customers: 0,
+    arpu: dom?.avgArpu || 100,
+    churnRate: dom?.avgChurn || 3,
+    teamAllocated: teamSize,
+    monthlyBudget: budget,
+    pmfScore: 0,
+    startedMonth: s.month,
+    totalInvested: 0,
+  };
+
+  s.subBusinesses = [...s.subBusinesses, sb];
+  s.cash -= budget;
+
+  s.eventLog = [...s.eventLog, {
+    month: s.month,
+    title: `新規事業「${name}」開始`,
+    effect: `${dom?.nameJa || domain} | 月予算¥${(budget / 1000).toFixed(0)}K | ${teamSize}名配置`,
+  }];
+
+  return s;
+}
+
+export function withdrawSubBusiness(state: GameState, subId: string): GameState {
+  const s = { ...state };
+  s.subBusinesses = s.subBusinesses.map(sb =>
+    sb.id === subId ? { ...sb, phase: 'failed' as const } : sb
+  );
+  s.eventLog = [...s.eventLog, {
+    month: s.month,
+    title: '新規事業撤退',
+    effect: `投資額¥${(s.subBusinesses.find(sb => sb.id === subId)?.totalInvested || 0) / 1000}Kを損失処理`,
+  }];
+  return s;
+}
+
 // Re-export data accessors
 export { features, getAvailableFeatures, verticals, founders, roles, techStacks };
 export { cofounders } from './data/cofounders';
@@ -1280,4 +1481,6 @@ export { scenarios } from './data/scenarios';
 export { generateCandidates } from './employeeGenerator';
 export { GRADE_COLORS } from './data/employeeBalance';
 export { SPECIAL_ABILITIES } from './data/specialAbilities';
+export { businessDomains } from './data/businesses';
+export { pivotTypes } from './data/pivots';
 export type { FundingOption };

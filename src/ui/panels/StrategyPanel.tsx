@@ -3,8 +3,9 @@ import { useGameStore } from '../hooks/useGame';
 import { techStacks } from '../../engine/data/techstacks';
 import { archetypeLabels } from '../../engine/data/investors';
 import { achievements as achievementDefs } from '../../engine/data/achievements';
+import { businessDomains } from '../../engine/data/businesses';
 import { ProgressBar } from '../components/ProgressBar';
-import { Acquisition } from '../../engine/types';
+import { Acquisition, PivotOption, BusinessDomainId } from '../../engine/types';
 import { formatCurrency } from '../../utils/currency';
 
 export const StrategyPanel: React.FC = () => {
@@ -13,8 +14,18 @@ export const StrategyPanel: React.FC = () => {
   const buyCompany = useGameStore(s => s.buyCompany);
   const newProduct = useGameStore(s => s.newProduct);
   const getAcqTargets = useGameStore(s => s.getAcqTargets);
+  const checkPivot = useGameStore(s => s.checkPivotSuggestion);
+  const getPivotOpts = useGameStore(s => s.getPivotOpts);
+  const doPivot = useGameStore(s => s.doPivot);
+  const canLaunchSub = useGameStore(s => s.canLaunchSub);
+  const launchSub = useGameStore(s => s.launchSub);
+  const withdrawSub = useGameStore(s => s.withdrawSub);
   const ts = techStacks[state.techStack];
   const [acqTargets, setAcqTargets] = useState<Acquisition[]>([]);
+  const [pivotOpts, setPivotOpts] = useState<PivotOption[]>([]);
+  const [showNewBiz, setShowNewBiz] = useState(false);
+  const [newBizDomain, setNewBizDomain] = useState<BusinessDomainId>('ai_saas');
+  const [newBizName, setNewBizName] = useState('');
   const arr = state.mrr * 12;
 
   return (
@@ -124,6 +135,122 @@ export const StrategyPanel: React.FC = () => {
             );
           })}
         </div>
+      </div>
+
+      {/* Pivot System */}
+      <div style={{ marginTop: 20 }}>
+        <h4 style={{ fontSize: 13, color: '#ef4444', margin: '0 0 8px' }}>ピボット（事業転換）</h4>
+        {state.pivotHistory && state.pivotHistory.length > 0 && (
+          <div style={{ fontSize: 10, color: '#888', marginBottom: 6 }}>
+            過去のピボット: {state.pivotHistory.map(p => `${businessDomains[p.toDomain]?.nameJa || p.toDomain}`).join(' → ')}
+          </div>
+        )}
+        {checkPivot() && (
+          <div style={{ fontSize: 11, color: '#f59e0b', marginBottom: 6, padding: '4px 8px', background: 'rgba(245,158,11,0.1)', borderRadius: 4 }}>
+            ⚠ ピボット推奨条件を満たしています
+          </div>
+        )}
+        {pivotOpts.length === 0 ? (
+          <button onClick={() => setPivotOpts(getPivotOpts())} style={{
+            width: '100%', padding: '6px 0', fontSize: 11, color: '#ef4444', cursor: 'pointer',
+            background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 6,
+          }}>
+            ピボット選択肢を確認
+          </button>
+        ) : (
+          <div>
+            <div style={{ maxHeight: 200, overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {pivotOpts.slice(0, 4).map(opt => (
+                <div key={opt.type} style={{
+                  background: 'rgba(255,255,255,0.03)', borderRadius: 6, padding: 8,
+                  border: '1px solid rgba(239,68,68,0.15)', fontSize: 11,
+                }}>
+                  <div style={{ fontWeight: 700, marginBottom: 2 }}>{opt.nameJa}</div>
+                  <div style={{ color: '#888', marginBottom: 4 }}>{opt.description}</div>
+                  <div style={{ color: '#666', fontSize: 10, marginBottom: 4 }}>
+                    → {businessDomains[opt.targetDomain]?.nameJa} | コスト{Math.round(opt.costRate * 100)}% | MRR維持{Math.round(opt.mrrRetainRate * 100)}% | {opt.devMonths}ヶ月
+                  </div>
+                  <button onClick={() => { doPivot(opt); setPivotOpts([]); }} style={{
+                    width: '100%', padding: '4px 0', fontSize: 10, fontWeight: 700, color: '#000',
+                    background: '#ef4444', border: 'none', borderRadius: 4, cursor: 'pointer',
+                  }}>
+                    このピボットを実行
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button onClick={() => setPivotOpts([])} style={{
+              width: '100%', marginTop: 6, padding: '4px 0', fontSize: 10, color: '#666',
+              background: 'none', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, cursor: 'pointer',
+            }}>
+              閉じる
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Sub-Business System */}
+      <div style={{ marginTop: 20 }}>
+        <h4 style={{ fontSize: 13, color: '#ec4899', margin: '0 0 8px' }}>新規事業（第二の柱）</h4>
+        {state.subBusinesses && state.subBusinesses.filter(sb => sb.phase !== 'failed').length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 8 }}>
+            {state.subBusinesses.filter(sb => sb.phase !== 'failed').map(sb => (
+              <div key={sb.id} style={{
+                background: 'rgba(255,255,255,0.03)', borderRadius: 6, padding: 8,
+                borderLeft: `3px solid ${sb.phase === 'growth' ? '#00c896' : '#f59e0b'}`,
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                  <span style={{ fontWeight: 600 }}>{sb.name}</span>
+                  <span style={{ color: sb.phase === 'growth' ? '#00c896' : '#f59e0b', fontSize: 10 }}>
+                    {sb.phase === 'research' ? '調査中' : sb.phase === 'mvp' ? 'MVP開発中' : sb.phase === 'pmf' ? 'PMF検証中' : '成長期'}
+                    {sb.phaseMonthsLeft > 0 ? ` (${sb.phaseMonthsLeft}ヶ月)` : ''}
+                  </span>
+                </div>
+                <div style={{ fontSize: 10, color: '#888', marginTop: 2 }}>
+                  {businessDomains[sb.domain]?.nameJa} | MRR {formatCurrency(sb.mrr)} | {sb.customers}社 | PMF {sb.pmfScore}%
+                </div>
+                <button onClick={() => withdrawSub(sb.id)} style={{
+                  marginTop: 4, padding: '2px 8px', fontSize: 9, color: '#ef4444',
+                  background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)',
+                  borderRadius: 3, cursor: 'pointer',
+                }}>撤退</button>
+              </div>
+            ))}
+          </div>
+        )}
+        {canLaunchSub() ? (
+          showNewBiz ? (
+            <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 6, padding: 10, border: '1px solid rgba(236,72,153,0.15)' }}>
+              <input value={newBizName} onChange={e => setNewBizName(e.target.value)} placeholder="事業名"
+                style={{ width: '100%', marginBottom: 6, padding: '4px 8px', fontSize: 11, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, color: '#fff', outline: 'none' }} />
+              <select value={newBizDomain} onChange={e => setNewBizDomain(e.target.value as BusinessDomainId)}
+                style={{ width: '100%', marginBottom: 6, padding: '4px 8px', fontSize: 11, background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, color: '#fff' }}>
+                {Object.values(businessDomains).filter(d => d.id !== state.vertical).map(d => (
+                  <option key={d.id} value={d.id}>{d.nameJa} (TAM ¥{d.tam}B, 成長{d.growthRate}%)</option>
+                ))}
+              </select>
+              <div style={{ display: 'flex', gap: 4 }}>
+                <button onClick={() => { if (newBizName.trim()) { launchSub(newBizDomain, newBizName.trim(), 50000, 3); setShowNewBiz(false); setNewBizName(''); } }}
+                  disabled={!newBizName.trim()} style={{
+                    flex: 1, padding: '5px 0', fontSize: 11, fontWeight: 600, color: '#000',
+                    background: newBizName.trim() ? '#ec4899' : '#333', border: 'none', borderRadius: 4, cursor: newBizName.trim() ? 'pointer' : 'not-allowed',
+                  }}>立ち上げ (¥50K/月, 3名)</button>
+                <button onClick={() => setShowNewBiz(false)} style={{
+                  padding: '5px 10px', fontSize: 10, color: '#666', background: 'none', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, cursor: 'pointer',
+                }}>取消</button>
+              </div>
+            </div>
+          ) : (
+            <button onClick={() => setShowNewBiz(true)} style={{
+              width: '100%', padding: '6px 0', fontSize: 11, color: '#ec4899', cursor: 'pointer',
+              background: 'rgba(236,72,153,0.1)', border: '1px solid rgba(236,72,153,0.3)', borderRadius: 6,
+            }}>+ 新規事業を立ち上げる</button>
+          )
+        ) : (
+          <div style={{ fontSize: 10, color: '#555', textAlign: 'center', padding: 8 }}>
+            {arr < 1_000_000 ? 'ARR ¥1M以上で解禁' : state.employees.length < 20 ? '社員20名以上で解禁' : '事業数上限に到達'}
+          </div>
+        )}
       </div>
 
       {/* Rivals */}
