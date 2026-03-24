@@ -13,7 +13,7 @@ export const events: GameEvent[] = [
       {
         label: 'コスト削減モード',
         description: 'バーンレートを抑え、嵐をやり過ごす',
-        effect: { churnDelta: 0.5, cacMultiplier: 1.2, moraleDelta: -5, message: 'コスト削減で耐え凌ぐ方針に' },
+        effect: { cash: -30000, churnDelta: 0.5, cacMultiplier: 1.2, moraleDelta: -5, message: 'コスト削減で耐え凌ぐ方針に' },
       },
       {
         label: '逆張り投資',
@@ -33,7 +33,7 @@ export const events: GameEvent[] = [
       {
         label: 'AI機能に全振り',
         description: '開発リソースをAI機能に集中する',
-        effect: { techDebtDelta: 10, brandDelta: 15, npsDelta: 5, message: 'AI機能の開発を加速。市場の注目を集める' },
+        effect: { cash: -120000, techDebtDelta: 10, brandDelta: 15, npsDelta: 5, customersDelta: 8, message: 'AI機能の開発を加速。市場の注目を集める' },
       },
       {
         label: '静観する',
@@ -49,7 +49,7 @@ export const events: GameEvent[] = [
     category: 'market',
     severity: 'positive',
     conditions: { minMonth: 8, probability: 0.07 },
-    autoEffect: { moraleDelta: -3, message: '業界全体が不安定だが、採用のチャンス。次の採用コストが30%低下。' },
+    autoEffect: { cash: -20000, moraleDelta: -3, message: '業界全体が不安定だが、採用のチャンス。次の採用コストが30%低下。' },
   },
 
   // ===== 競合イベント =====
@@ -64,7 +64,7 @@ export const events: GameEvent[] = [
       {
         label: 'ニッチに深堀り',
         description: '特定業界に特化して差別化する',
-        effect: { cacMultiplier: 0.9, npsDelta: 5, message: 'ニッチ戦略で差別化に成功' },
+        effect: { cash: -50000, cacMultiplier: 0.9, npsDelta: 5, message: 'ニッチ戦略で差別化に成功' },
       },
       {
         label: '正面対決',
@@ -74,7 +74,7 @@ export const events: GameEvent[] = [
       {
         label: '統合戦略',
         description: '大手のエコシステムに乗る',
-        effect: { cacMultiplier: 0.7, npsDelta: 3, churnDelta: -0.3, message: '大手プラットフォームとの統合で共存路線' },
+        effect: { cash: -40000, cacMultiplier: 0.7, npsDelta: 3, churnDelta: -0.3, customersDelta: 5, message: '大手プラットフォームとの統合で共存路線' },
       },
     ],
   },
@@ -85,7 +85,7 @@ export const events: GameEvent[] = [
     category: 'competitor',
     severity: 'negative',
     conditions: { minMonth: 6, probability: 0.1 },
-    autoEffect: { cacMultiplier: 1.2, churnDelta: 0.3, message: '競合の資金力が増大。CAC上昇圧力。' },
+    autoEffect: { cash: -30000, cacMultiplier: 1.2, churnDelta: 0.3, customersDelta: -3, message: '競合の資金力が増大。CAC上昇圧力。' },
   },
   {
     id: 'competitor_collapse',
@@ -114,7 +114,7 @@ export const events: GameEvent[] = [
       {
         label: '送り出す',
         description: '感謝を伝え、新たな挑戦を応援する',
-        effect: { moraleDelta: -10, techDebtDelta: 5, message: 'エースが去り、チームに動揺が走る' },
+        effect: { cash: -60000, moraleDelta: -10, techDebtDelta: 5, message: 'エースが去り、チームに動揺が走る' },
       },
     ],
   },
@@ -134,7 +134,7 @@ export const events: GameEvent[] = [
       {
         label: '個別面談で対応',
         description: 'コストを抑えて1on1で対応',
-        effect: { moraleDelta: 10, message: '面談で少し改善。根本解決にはなっていないが...' },
+        effect: { cash: -10000, moraleDelta: 10, message: '面談で少し改善。根本解決にはなっていないが...' },
       },
     ],
   },
@@ -149,7 +149,7 @@ export const events: GameEvent[] = [
       {
         label: '採用する',
         description: '年俸$200Kだが、チーム全体の底上げに',
-        effect: { moraleDelta: 10, techDebtDelta: -5, npsDelta: 3, message: 'スター人材がチームに加入！' },
+        effect: { cash: -200000, moraleDelta: 10, techDebtDelta: -5, npsDelta: 3, message: 'スター人材がチームに加入！' },
       },
       {
         label: '見送る',
@@ -171,12 +171,12 @@ export const events: GameEvent[] = [
       {
         label: '即座に全力対応',
         description: '全エンジニアを投入して復旧',
-        effect: { npsDelta: -10, moraleDelta: -10, techDebtDelta: 5, message: '4時間で復旧。信頼回復に努める' },
+        effect: { cash: -30000, npsDelta: -10, moraleDelta: -10, techDebtDelta: 5, message: '4時間で復旧。信頼回復に努める' },
       },
       {
         label: '段階的に対応',
         description: '影響範囲を限定し、計画的に復旧',
-        effect: { npsDelta: -15, churnDelta: 0.5, techDebtDelta: 3, message: '復旧に12時間。一部顧客が不満' },
+        effect: { cash: -50000, npsDelta: -15, churnDelta: 0.5, techDebtDelta: 3, customersDelta: -3, message: '復旧に12時間。一部顧客が不満' },
       },
     ],
   },
@@ -191,12 +191,12 @@ export const events: GameEvent[] = [
       {
         label: '即座にパッチ適用',
         description: '開発を止めて緊急対応',
-        effect: { techDebtDelta: -3, npsDelta: -5, brandDelta: 5, message: '迅速な対応で信頼を維持' },
+        effect: { cash: -40000, techDebtDelta: -3, npsDelta: -5, brandDelta: 5, message: '迅速な対応で信頼を維持' },
       },
       {
         label: '次のリリースで対応',
         description: '現在の開発を優先',
-        effect: { npsDelta: -20, churnDelta: 1.0, brandDelta: -20, message: '対応の遅れがメディアに取り上げられ大炎上' },
+        effect: { cash: -100000, npsDelta: -20, churnDelta: 1.0, brandDelta: -20, customersDelta: -8, message: '対応の遅れがメディアに取り上げられ大炎上' },
       },
     ],
   },
@@ -207,7 +207,7 @@ export const events: GameEvent[] = [
     category: 'product',
     severity: 'positive',
     conditions: { minMonth: 6, minCustomers: 20, probability: 0.07 },
-    autoEffect: { npsDelta: 5, brandDelta: 5, message: '新しいユースケースが口コミで広がり始めた！' },
+    autoEffect: { cash: 30000, npsDelta: 5, brandDelta: 5, customersDelta: 5, message: '新しいユースケースが口コミで広がり始めた！' },
   },
 
   // ===== 顧客イベント =====
@@ -222,12 +222,12 @@ export const events: GameEvent[] = [
       {
         label: '受注する',
         description: 'カスタム開発を引き受けてでも獲得',
-        effect: { mrrMultiplier: 1.05, techDebtDelta: 8, moraleDelta: -5, message: '大口契約を獲得！ただしカスタム開発の負荷が...' },
+        effect: { cash: 200000, mrrMultiplier: 1.05, techDebtDelta: 8, moraleDelta: -5, customersDelta: 1, message: '大口契約を獲得！ただしカスタム開発の負荷が...' },
       },
       {
         label: '標準プランを提案',
         description: 'カスタムはせず、標準機能で勝負',
-        effect: { mrrMultiplier: 1.02, brandDelta: 3, message: '標準プランで契約成立。ブランド力向上' },
+        effect: { cash: 80000, mrrMultiplier: 1.02, brandDelta: 3, customersDelta: 1, message: '標準プランで契約成立。ブランド力向上' },
       },
       {
         label: '見送る',
@@ -247,12 +247,12 @@ export const events: GameEvent[] = [
       {
         label: '緊急CSミーティング',
         description: '顧客一人ひとりに連絡して引き留め',
-        effect: { churnDelta: -0.5, moraleDelta: -5, message: '一部の顧客を引き留めに成功' },
+        effect: { cash: -20000, churnDelta: -0.5, moraleDelta: -5, message: '一部の顧客を引き留めに成功' },
       },
       {
         label: '割引を提案',
         description: '20%割引で継続を促す',
-        effect: { churnDelta: -0.8, mrrMultiplier: 0.97, message: '割引で多くの顧客が残留。ただしARPU低下' },
+        effect: { cash: -30000, churnDelta: -0.8, mrrMultiplier: 0.97, customersDelta: 2, message: '割引で多くの顧客が残留。ただしARPU低下' },
       },
     ],
   },
@@ -298,7 +298,7 @@ export const events: GameEvent[] = [
       {
         label: '登壇する',
         description: '1週間の準備時間を投資',
-        effect: { brandDelta: 20, customersDelta: 10, cacMultiplier: 0.7, message: 'カンファレンスで大きな反響！リード急増' },
+        effect: { cash: -30000, brandDelta: 20, customersDelta: 10, cacMultiplier: 0.7, message: 'カンファレンスで大きな反響！リード急増' },
       },
       {
         label: '辞退する',

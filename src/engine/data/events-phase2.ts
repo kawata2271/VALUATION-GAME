@@ -13,7 +13,7 @@ export const phase2Events: GameEvent[] = [
       {
         label: 'PM を採用して組織化',
         description: '明確な役割分担を作る',
-        effect: { moraleDelta: 10, message: '組織化に成功。チームの生産性が向上した' },
+        effect: { cash: -50000, moraleDelta: 10, message: '組織化に成功。チームの生産性が向上した' },
       },
       {
         label: '今のまま続ける',
@@ -38,12 +38,12 @@ export const phase2Events: GameEvent[] = [
       {
         label: 'COOを採用',
         description: '組織運営のプロを迎える',
-        effect: { moraleDelta: 10, message: 'COO採用で組織課題に着手' },
+        effect: { cash: -200000, moraleDelta: 10, message: 'COO採用で組織課題に着手' },
       },
       {
         label: '放置する',
         description: 'プロダクト優先で組織課題は後回し',
-        effect: { moraleDelta: -15, techDebtDelta: 5, message: '組織の断絶が深刻化...' },
+        effect: { cash: -20000, moraleDelta: -15, techDebtDelta: 5, message: '組織の断絶が深刻化...' },
       },
     ],
   },
@@ -58,12 +58,12 @@ export const phase2Events: GameEvent[] = [
       {
         label: '権限委譲を進める',
         description: 'VP層に意思決定権を移す',
-        effect: { moraleDelta: 15, brandDelta: 5, message: '権限委譲に成功。組織が自律的に動き始めた' },
+        effect: { cash: -30000, moraleDelta: 15, brandDelta: 5, message: '権限委譲に成功。組織が自律的に動き始めた' },
       },
       {
         label: '自分で管理し続ける',
         description: 'まだ自分がやった方が早い',
-        effect: { moraleDelta: -20, npsDelta: -5, message: '意思決定の遅延が慢性化...' },
+        effect: { cash: -40000, moraleDelta: -20, npsDelta: -5, message: '意思決定の遅延が慢性化...' },
       },
     ],
   },
@@ -88,7 +88,7 @@ export const phase2Events: GameEvent[] = [
       {
         label: '何もしない',
         description: '業務に集中するべき',
-        effect: { moraleDelta: -25, message: '文化の崩壊が加速。退職者が増加...' },
+        effect: { cash: -60000, moraleDelta: -25, message: '文化の崩壊が加速。退職者が増加...' },
       },
     ],
   },
@@ -105,7 +105,7 @@ export const phase2Events: GameEvent[] = [
       {
         label: '話し合いで解決',
         description: '時間をかけて合意形成を目指す',
-        effect: { moraleDelta: -5, message: '話し合いの結果、方向性を再確認。ただし完全には解決せず' },
+        effect: { cash: -20000, moraleDelta: -5, message: '話し合いの結果、方向性を再確認。ただし完全には解決せず' },
       },
       {
         label: '持分を買い取る',
@@ -125,12 +125,12 @@ export const phase2Events: GameEvent[] = [
       {
         label: 'ストックオプション追加で引き留め',
         description: 'オプション2%追加で説得',
-        effect: { moraleDelta: 5, message: '共同創業者の引き留めに成功。オプションプール消費' },
+        effect: { cash: -30000, moraleDelta: 5, message: '共同創業者の引き留めに成功。オプションプール消費' },
       },
       {
         label: '送り出す',
         description: '相手の選択を尊重する',
-        effect: { moraleDelta: -20, techDebtDelta: 5, message: '共同創業者が退任。大きな穴が空いた...' },
+        effect: { cash: -80000, moraleDelta: -20, techDebtDelta: 5, message: '共同創業者が退任。大きな穴が空いた...' },
       },
     ],
   },
@@ -147,7 +147,7 @@ export const phase2Events: GameEvent[] = [
       {
         label: '攻めの投資を約束',
         description: '採用とマーケティングを強化する',
-        effect: { brandDelta: 5, moraleDelta: -3, message: '攻めの姿勢を示し、投資家は一旦納得' },
+        effect: { cash: -80000, brandDelta: 5, moraleDelta: -3, message: '攻めの姿勢を示し、投資家は一旦納得' },
       },
       {
         label: 'ユニットエコノミクスの改善を提示',
@@ -157,7 +157,7 @@ export const phase2Events: GameEvent[] = [
       {
         label: '新製品のビジョンを発表',
         description: 'マルチプロダクト戦略を提示',
-        effect: { brandDelta: 10, message: 'ビジョンに投資家が興奮。次のラウンドに期待' },
+        effect: { cash: -50000, brandDelta: 10, message: 'ビジョンに投資家が興奮。次のラウンドに期待' },
       },
     ],
   },
@@ -177,7 +177,7 @@ export const phase2Events: GameEvent[] = [
       {
         label: 'コスト最適化を約束',
         description: 'バーンレートの削減を約束',
-        effect: { moraleDelta: -5, message: 'コスト削減を約束。チームは少し不安に' },
+        effect: { cash: 30000, moraleDelta: -5, message: 'コスト削減を約束。チームは少し不安に' },
       },
     ],
   },
@@ -194,7 +194,7 @@ export const phase2Events: GameEvent[] = [
       {
         label: 'インフラ機能を最優先で開発',
         description: 'SSO/セキュリティ機能を急いで作る',
-        effect: { techDebtDelta: 10, mrrMultiplier: 1.08, message: '突貫でインフラ機能を実装。大口契約を獲得！' },
+        effect: { cash: 300000, techDebtDelta: 10, mrrMultiplier: 1.08, customersDelta: 1, message: '突貫でインフラ機能を実装。大口契約を獲得！' },
       },
       {
         label: '標準プランを提案',
@@ -214,7 +214,7 @@ export const phase2Events: GameEvent[] = [
       {
         label: '割引プランを用意',
         description: 'SMB向けの低価格プランを新設',
-        effect: { churnDelta: -0.5, mrrMultiplier: 0.95, message: '割引プランで一部引き留めに成功。ただしARPU低下' },
+        effect: { cash: -20000, churnDelta: -0.5, mrrMultiplier: 0.95, customersDelta: 2, message: '割引プランで一部引き留めに成功。ただしARPU低下' },
       },
       {
         label: 'アップマーケットにシフト',
@@ -236,12 +236,12 @@ export const phase2Events: GameEvent[] = [
       {
         label: '値下げで対抗',
         description: '価格を20%下げて対抗',
-        effect: { churnDelta: -0.5, mrrMultiplier: 0.85, message: '値下げで顧客流出を防いだが、売上に影響' },
+        effect: { cash: -20000, churnDelta: -0.5, mrrMultiplier: 0.85, customersDelta: 3, message: '値下げで顧客流出を防いだが、売上に影響' },
       },
       {
         label: '価値で勝負',
         description: '新機能の価値を訴求',
-        effect: { churnDelta: 0.3, brandDelta: 5, npsDelta: 3, message: '価値提案で差別化。一部解約は受け入れ' },
+        effect: { cash: -30000, churnDelta: 0.3, brandDelta: 5, npsDelta: 3, message: '価値提案で差別化。一部解約は受け入れ' },
       },
       {
         label: '年間契約で囲い込み',
@@ -288,7 +288,7 @@ export const phase2Events: GameEvent[] = [
     category: 'market',
     severity: 'negative',
     conditions: { minMonth: 6, probability: 0.08 },
-    autoEffect: { moraleDelta: -5, message: '人材市場の過熱で採用コストが上昇。既存社員の給与見直し圧力も。' },
+    autoEffect: { cash: -50000, moraleDelta: -5, message: '人材市場の過熱で採用コストが上昇。既存社員の給与見直し圧力も。' },
   },
   {
     id: 'media_feature',
@@ -329,7 +329,7 @@ export const phase2Events: GameEvent[] = [
       {
         label: '値下げで対抗',
         description: '低価格プランで流出を防ぐ',
-        effect: { mrrMultiplier: 0.9, churnDelta: -0.5, message: '値下げで一部顧客を引き留め' },
+        effect: { cash: -20000, mrrMultiplier: 0.9, churnDelta: -0.5, customersDelta: 2, message: '値下げで一部顧客を引き留め' },
       },
     ],
   },
@@ -342,7 +342,7 @@ export const phase2Events: GameEvent[] = [
     category: 'internal',
     severity: 'positive',
     conditions: { minTeamSize: 5, probability: 0.06 },
-    autoEffect: { moraleDelta: 15, npsDelta: 5, techDebtDelta: 3, message: 'ハッカソンが大成功！チームの士気が急上昇' },
+    autoEffect: { cash: -20000, moraleDelta: 15, npsDelta: 5, techDebtDelta: 3, message: 'ハッカソンが大成功！チームの士気が急上昇' },
   },
   {
     id: 'glassdoor_review',
@@ -355,12 +355,12 @@ export const phase2Events: GameEvent[] = [
       {
         label: '真摯に受け止めて改善',
         description: 'フィードバックを元に組織改善',
-        effect: { moraleDelta: 10, brandDelta: 5, message: '批判を受け止め、改善策を実施。透明性が評価された' },
+        effect: { cash: -20000, moraleDelta: 10, brandDelta: 5, message: '批判を受け止め、改善策を実施。透明性が評価された' },
       },
       {
         label: '無視する',
         description: '匿名の声に振り回されない',
-        effect: { moraleDelta: -5, brandDelta: -5, message: '無視した結果、追加の書き込みが...採用に影響' },
+        effect: { cash: -30000, moraleDelta: -5, brandDelta: -5, message: '無視した結果、追加の書き込みが...採用に影響' },
       },
     ],
   },
@@ -408,7 +408,7 @@ export const phase2Events: GameEvent[] = [
       {
         label: '認証取得して受注',
         description: '¥100K + 3ヶ月で認証を取得',
-        effect: { cash: -100000, mrrMultiplier: 1.1, brandDelta: 15, message: '政府契約を獲得！信頼性の証明に' },
+        effect: { cash: -100000, mrrMultiplier: 1.1, brandDelta: 15, customersDelta: 1, message: '政府契約を獲得！信頼性の証明に' },
       },
       {
         label: '見送る',
@@ -430,7 +430,7 @@ export const phase2Events: GameEvent[] = [
       {
         label: '交渉のテーブルにつく',
         description: '条件を聞いてみる',
-        effect: { brandDelta: 10, moraleDelta: -5, message: 'M&A交渉を開始。チームに動揺が広がるが、オプションとして検討' },
+        effect: { cash: -50000, brandDelta: 10, moraleDelta: -5, message: 'M&A交渉を開始。チームに動揺が広がるが、オプションとして検討' },
       },
       {
         label: '即座に断る',
@@ -449,7 +449,7 @@ export const phase2Events: GameEvent[] = [
     severity: 'negative',
     conditions: { minMonth: 6, probability: 0.06 },
     choices: [
-      { label: '代替APIに移行', description: '3ヶ月かけて自前実装に切り替え', effect: { techDebtDelta: 8, message: '代替実装を開始。3ヶ月間は不安定な状態が続く' } },
+      { label: '代替APIに移行', description: '3ヶ月かけて自前実装に切り替え', effect: { cash: -60000, techDebtDelta: 8, message: '代替実装を開始。3ヶ月間は不安定な状態が続く' } },
       { label: 'コストを受け入れる', description: '月$5Kの追加支出', effect: { cash: -15000, message: '追加コストを受け入れ。安定性を維持' } },
     ],
   },
@@ -479,8 +479,8 @@ export const phase2Events: GameEvent[] = [
     severity: 'negative',
     conditions: { minMonth: 12, probability: 0.07 },
     choices: [
-      { label: '1週間休暇を取る', description: '思い切って休む', effect: { moraleDelta: 15, npsDelta: 2, message: '休暇でリフレッシュ。視野が広がった' } },
-      { label: '気合いで乗り切る', description: '今は休んでいる場合じゃない', effect: { moraleDelta: -10, techDebtDelta: 5, message: '無理を続けた結果、判断力が低下...' } },
+      { label: '1週間休暇を取る', description: '思い切って休む', effect: { cash: -20000, moraleDelta: 15, npsDelta: 2, message: '休暇でリフレッシュ。視野が広がった' } },
+      { label: '気合いで乗り切る', description: '今は休んでいる場合じゃない', effect: { cash: -30000, moraleDelta: -10, techDebtDelta: 5, message: '無理を続けた結果、判断力が低下...' } },
     ],
   },
   {
@@ -500,7 +500,7 @@ export const phase2Events: GameEvent[] = [
     severity: 'negative',
     conditions: { minMonth: 6, minCustomers: 20, probability: 0.08 },
     choices: [
-      { label: 'SREエンジニアに最適化させる', description: '1ヶ月かけてインフラ最適化', effect: { techDebtDelta: -5, message: 'インフラ最適化でコスト30%削減に成功' } },
+      { label: 'SREエンジニアに最適化させる', description: '1ヶ月かけてインフラ最適化', effect: { cash: -40000, techDebtDelta: -5, message: 'インフラ最適化でコスト30%削減に成功' } },
       { label: 'プランをアップグレード', description: '上位プランでパフォーマンス確保', effect: { cash: -30000, message: '上位プランに移行。コスト増だがパフォーマンスは安定' } },
     ],
   },
@@ -512,7 +512,7 @@ export const phase2Events: GameEvent[] = [
     severity: 'positive',
     conditions: { minMonth: 12, minMrr: 10000, probability: 0.06 },
     choices: [
-      { label: '連携を進める', description: 'API連携とマーケットプレイス出店', effect: { cacMultiplier: 0.7, brandDelta: 10, techDebtDelta: 5, message: 'パートナーシップ締結！新たな流入チャネルを獲得' } },
+      { label: '連携を進める', description: 'API連携とマーケットプレイス出店', effect: { cash: -40000, cacMultiplier: 0.7, brandDelta: 10, techDebtDelta: 5, customersDelta: 8, message: 'パートナーシップ締結！新たな流入チャネルを獲得' } },
       { label: '独自路線を維持', description: '依存関係を作りたくない', effect: { brandDelta: 3, message: '独自路線を堅持。自力成長を選択' } },
     ],
   },
@@ -525,7 +525,7 @@ export const phase2Events: GameEvent[] = [
     conditions: { minTeamSize: 15, probability: 0.06 },
     choices: [
       { label: 'D&Iプログラムを導入', description: '¥30Kの予算で多様性推進', effect: { cash: -30000, moraleDelta: 10, brandDelta: 10, message: 'D&I施策が好評。採用ブランドが向上' } },
-      { label: '実力主義を貫く', description: '能力だけで判断する', effect: { moraleDelta: -5, brandDelta: -5, message: '一部社員から不満の声。採用にも影響' } },
+      { label: '実力主義を貫く', description: '能力だけで判断する', effect: { cash: -20000, moraleDelta: -5, brandDelta: -5, message: '一部社員から不満の声。採用にも影響' } },
     ],
   },
   {
@@ -558,8 +558,8 @@ export const phase2Events: GameEvent[] = [
     severity: 'negative',
     conditions: { minMonth: 6, minCustomers: 20, probability: 0.07 },
     choices: [
-      { label: 'UI改善を約束し公開ロードマップを提示', description: '透明性で信頼回復', effect: { npsDelta: -5, brandDelta: 5, moraleDelta: -3, message: 'ロードマップ公開で一部鎮静化。改善を急ぐ' } },
-      { label: '批判に丁寧に個別対応', description: '一つ一つに返信する', effect: { npsDelta: -3, brandDelta: 10, message: '丁寧な対応が好感を生み、逆にファンが増えた' } },
+      { label: 'UI改善を約束し公開ロードマップを提示', description: '透明性で信頼回復', effect: { cash: -30000, npsDelta: -5, brandDelta: 5, moraleDelta: -3, message: 'ロードマップ公開で一部鎮静化。改善を急ぐ' } },
+      { label: '批判に丁寧に個別対応', description: '一つ一つに返信する', effect: { cash: -20000, npsDelta: -3, brandDelta: 10, customersDelta: 3, message: '丁寧な対応が好感を生み、逆にファンが増えた' } },
     ],
   },
   {

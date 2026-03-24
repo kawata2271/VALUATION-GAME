@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GameEvent, EventChoice } from '../../engine/types';
+import { GameEvent, EventChoice, EventEffect } from '../../engine/types';
+import { formatCurrency } from '../../utils/currency';
 
 interface Props {
   event: GameEvent;
@@ -80,23 +81,107 @@ export const EventModal: React.FC<Props> = ({ event, onChoice, onDismiss }) => {
                 }}
               >
                 <div style={{ fontWeight: 600, marginBottom: 4 }}>{choice.label}</div>
-                <div style={{ fontSize: 12, color: '#888' }}>{choice.description}</div>
+                <div style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>{choice.description}</div>
+                <ImpactPreview effect={choice.effect} />
               </button>
             ))}
           </div>
         ) : (
-          <button
-            onClick={onDismiss}
-            style={{
-              background: color, border: 'none', borderRadius: 8,
-              padding: '10px 24px', color: '#000', fontWeight: 600,
-              cursor: 'pointer', fontSize: 14, width: '100%',
-            }}
-          >
-            了解
-          </button>
+          <div>
+            {event.autoEffect && <ImpactPreview effect={event.autoEffect} />}
+            <button
+              onClick={onDismiss}
+              style={{
+                background: color, border: 'none', borderRadius: 8,
+                padding: '10px 24px', color: '#000', fontWeight: 600,
+                cursor: 'pointer', fontSize: 14, width: '100%', marginTop: 8,
+              }}
+            >
+              了解
+            </button>
+          </div>
         )}
       </motion.div>
     </motion.div>
+  );
+};
+
+const ImpactPreview: React.FC<{ effect: EventEffect }> = ({ effect }) => {
+  const items: { label: string; value: string; color: string }[] = [];
+
+  if (effect.cash) {
+    const positive = effect.cash > 0;
+    items.push({
+      label: '💰',
+      value: `${positive ? '+' : ''}${formatCurrency(effect.cash)}`,
+      color: positive ? '#00c896' : '#ef4444',
+    });
+  }
+  if (effect.customersDelta) {
+    const positive = effect.customersDelta > 0;
+    items.push({
+      label: '👥',
+      value: `${positive ? '+' : ''}${effect.customersDelta}社`,
+      color: positive ? '#00c896' : '#ef4444',
+    });
+  }
+  if (effect.mrrMultiplier && effect.mrrMultiplier !== 1) {
+    const pct = Math.round((effect.mrrMultiplier - 1) * 100);
+    items.push({
+      label: '📊',
+      value: `MRR ${pct >= 0 ? '+' : ''}${pct}%`,
+      color: pct >= 0 ? '#00c896' : '#ef4444',
+    });
+  }
+  if (effect.churnDelta) {
+    items.push({
+      label: '📉',
+      value: `チャーン ${effect.churnDelta > 0 ? '+' : ''}${effect.churnDelta.toFixed(1)}%`,
+      color: effect.churnDelta > 0 ? '#ef4444' : '#00c896',
+    });
+  }
+  if (effect.npsDelta) {
+    items.push({
+      label: '⭐',
+      value: `NPS ${effect.npsDelta > 0 ? '+' : ''}${effect.npsDelta}`,
+      color: effect.npsDelta > 0 ? '#00c896' : '#ef4444',
+    });
+  }
+  if (effect.moraleDelta) {
+    items.push({
+      label: '😊',
+      value: `士気 ${effect.moraleDelta > 0 ? '+' : ''}${effect.moraleDelta}`,
+      color: effect.moraleDelta > 0 ? '#00c896' : '#ef4444',
+    });
+  }
+  if (effect.techDebtDelta) {
+    items.push({
+      label: '🔧',
+      value: `負債 ${effect.techDebtDelta > 0 ? '+' : ''}${effect.techDebtDelta}`,
+      color: effect.techDebtDelta > 0 ? '#ef4444' : '#00c896',
+    });
+  }
+  if (effect.brandDelta) {
+    items.push({
+      label: '🏷️',
+      value: `ブランド ${effect.brandDelta > 0 ? '+' : ''}${effect.brandDelta}`,
+      color: effect.brandDelta > 0 ? '#00c896' : '#ef4444',
+    });
+  }
+
+  if (items.length === 0) return null;
+
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+      {items.map((item, i) => (
+        <span key={i} style={{
+          fontSize: 10, padding: '1px 5px', borderRadius: 3,
+          background: `${item.color}15`, color: item.color,
+          fontFamily: 'monospace',
+        }}>
+          {item.label} {item.value}
+        </span>
+      ))}
+    </div>
   );
 };
