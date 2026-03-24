@@ -1,0 +1,1 @@
+var e=`valuation_game_leaderboard`;function t(){try{let t=localStorage.getItem(e);return t?JSON.parse(t):[]}catch{return[]}}function n(n){try{let r=t();r.push(n),r.sort((e,t)=>t.score-e.score);let i=r.slice(0,20);localStorage.setItem(e,JSON.stringify(i))}catch{}}export{t as n,n as t};
