@@ -310,6 +310,14 @@ export interface GameState {
   newsFeed: string[];
   pendingRaises: RaiseRequest[] | null;
 
+  // Product Quality
+  productQuality: ProductQuality;
+  jobPostings: JobPosting[];
+  interviewCandidates: Employee[];
+  interviewResults: InterviewResult[];
+  interviewSlotsLeft: number;
+  jobPostingSlotsLeft: number;
+
   // OKR/KPI
   quarters: Quarter[];
   objectives: Objective[];
@@ -464,6 +472,36 @@ export interface TechDebtCategories {
   codeQuality: number;
   security: number;
   scalability: number;
+}
+
+// ===== Product Quality System =====
+export interface ProductQuality {
+  functionality: number;      // 機能充実度 (0-100)
+  uiux: number;               // UI/UX品質 (0-100)
+  stability: number;          // システム安定性 (0-100)
+  customerSuccess: number;    // CS品質 (0-100)
+  security: number;           // セキュリティ (0-100)
+}
+
+// ===== Interview System =====
+export interface InterviewResult {
+  candidateId: string;
+  candidate: Employee;
+  impressionScore: number;      // 面談印象 (1-5)
+  cultureMatch: number;         // カルチャーフィット (1-5)
+  technicalAssessment: number;  // 技術評価 (1-5)
+  redFlags: string[];
+  greenFlags: string[];
+  revealedStats: Partial<EmployeeStats>; // 面談で見えた能力(一部のみ)
+  decision: 'offer' | 'reject' | 'pending';
+}
+
+export interface JobPosting {
+  id: string;
+  role: EmployeeRole;
+  offeredSalary: number;
+  postedMonth: number;
+  status: 'open' | 'interviewing' | 'closed';
 }
 
 // ===== OKR / KPI System =====

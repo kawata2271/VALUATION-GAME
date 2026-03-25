@@ -225,6 +225,27 @@ export const GameScreen: React.FC = () => {
             <ProgressBar label="ブランド認知" value={state.brand} color="#6366f1" />
           </div>
 
+          {/* Product Quality */}
+          {state.productQuality && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4, marginBottom: 16 }}>
+              {[
+                { label: '機能', value: state.productQuality.functionality, key: 'func' },
+                { label: 'UX', value: state.productQuality.uiux, key: 'uiux' },
+                { label: '安定性', value: state.productQuality.stability, key: 'stab' },
+                { label: 'CS', value: state.productQuality.customerSuccess, key: 'cs' },
+                { label: 'セキュリティ', value: state.productQuality.security, key: 'sec' },
+              ].map(q => (
+                <div key={q.key} style={{ textAlign: 'center', padding: '4px 2px', background: 'rgba(255,255,255,0.02)', borderRadius: 4 }}>
+                  <div style={{ fontSize: 8, color: '#666', marginBottom: 2 }}>{q.label}</div>
+                  <div style={{
+                    fontSize: 14, fontWeight: 700, fontFamily: 'monospace',
+                    color: q.value >= 70 ? '#00c896' : q.value >= 40 ? '#f59e0b' : '#ef4444',
+                  }}>{q.value}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Mini Chart */}
           {state.history.length > 1 && (
             <div style={{

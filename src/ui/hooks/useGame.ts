@@ -14,6 +14,7 @@ import {
   shouldSuggestPivot, getPivotOptions, executePivot,
   canLaunchSubBusiness, launchSubBusiness, withdrawSubBusiness,
   setDevAllocation,
+  createJobPosting, conductInterview, makeOffer, rejectCandidate,
   addObjective, addKeyResult, updateKeyResultValue, addMemberKPI,
   deleteObjective, deleteKPI, processQuarterReview, getKPITemplates,
 } from '../../engine/GameEngine';
@@ -73,6 +74,12 @@ interface GameStore {
   launchSub: (domain: BusinessDomainId, name: string, budget: number, team: number) => void;
   withdrawSub: (subId: string) => void;
   setAllocation: (ratio: number) => void;
+
+  // Interview
+  postJob: (role: EmployeeRole, salary: number) => void;
+  interview: (candidateId: string) => void;
+  offerJob: (candidateId: string) => void;
+  rejectCand: (candidateId: string) => void;
 
   // OKR
   createObjective: (memberId: string, title: string, desc: string, priority: 'high' | 'medium' | 'low') => void;
@@ -357,6 +364,28 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const newState = setDevAllocation(state, ratio);
     autoSave(newState);
     set({ state: newState });
+  },
+
+  postJob: (role, salary) => {
+    const { state } = get();
+    if (!state) return;
+    set({ state: createJobPosting(state, role, salary) });
+  },
+  interview: (candidateId) => {
+    const { state } = get();
+    if (!state) return;
+    set({ state: conductInterview(state, candidateId) });
+  },
+  offerJob: (candidateId) => {
+    const { state } = get();
+    if (!state) return;
+    Sound.hire();
+    set({ state: makeOffer(state, candidateId) });
+  },
+  rejectCand: (candidateId) => {
+    const { state } = get();
+    if (!state) return;
+    set({ state: rejectCandidate(state, candidateId) });
   },
 
   createObjective: (memberId, title, desc, priority) => {

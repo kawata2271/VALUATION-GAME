@@ -141,6 +141,12 @@ export function createInitialState(
     rivals: generateRivals(vertical),
     newsFeed: [],
     pendingRaises: null,
+    productQuality: { functionality: 20, uiux: 20, stability: 50, customerSuccess: 20, security: 40 },
+    jobPostings: [],
+    interviewCandidates: [],
+    interviewResults: [],
+    interviewSlotsLeft: 3,
+    jobPostingSlotsLeft: 1,
     quarters: [],
     objectives: [],
     memberKPIs: [],
@@ -530,6 +536,75 @@ export function advanceTurn(state: GameState): GameState {
     // HR Tech: year-end crunch
     s.morale = Math.max(0, s.morale - 2);
   }
+
+  // --- Product Quality Calculation (from employee abilities) ---
+  const pq = { ...s.productQuality };
+  const empsByRole = (prefix: string) => s.employees.filter(e => e.role.startsWith(prefix));
+  const avgStat = (emps: Employee[], stat: keyof import('./types').EmployeeStats) => {
+    if (emps.length === 0) return 0;
+    return emps.reduce((sum, e) => sum + (e.stats?.[stat] || 40), 0) / emps.length;
+  };
+  const engineers = empsByRole('engineer_');
+  const designers = [...empsByRole('marketing_brand')]; // デザイナーがいない場合マーケが代替
+  const salesTeam = empsByRole('sales_');
+  const csTeam = empsByRole('cs_');
+  const pms = s.employees.filter(e => e.role === 'pm');
+
+  // functionality: エンジニア開発力60% + PM分析力25% + デザイン15%
+  const funcTarget = avgStat(engineers, 'tech') * 0.6 + avgStat(pms, 'management') * 0.25 + avgStat(designers, 'creativity') * 0.15;
+  pq.functionality = Math.round(pq.functionality * 0.85 + funcTarget * 0.15); // 徐々に近づく
+
+  // uiux: デザイナー/マーケ50% + エンジニア20% + PM15% + CS15%
+  const uiTarget = avgStat(designers, 'creativity') * 0.5 + avgStat(engineers, 'tech') * 0.2 + avgStat(pms, 'management') * 0.15 + avgStat(csTeam, 'sales') * 0.15;
+  pq.uiux = Math.round(pq.uiux * 0.85 + (uiTarget || 20) * 0.15);
+
+  // stability: エンジニア分析力50% + 開発力30% + PM20% - 技術負債影響
+  const stabTarget = avgStat(engineers, 'management') * 0.5 + avgStat(engineers, 'tech') * 0.3 + avgStat(pms, 'management') * 0.2;
+  const debtPenalty = Math.max(0, (s.techDebt - 30) * 0.5);
+  pq.stability = Math.max(0, Math.min(100, Math.round(pq.stability * 0.85 + stabTarget * 0.15 - debtPenalty * 0.1)));
+
+  // customerSuccess: CS40% + 営業コミュ20% + PM20%
+  const csTarget = avgStat(csTeam, 'sales') * 0.4 + avgStat(csTeam, 'management') * 0.2 + avgStat(salesTeam, 'sales') * 0.2 + avgStat(pms, 'management') * 0.2;
+  pq.customerSuccess = Math.round(pq.customerSuccess * 0.85 + (csTarget || 15) * 0.15);
+
+  // security: エンジニア分析力50% + 開発力30% + PM20%
+  const secTarget = avgStat(engineers, 'management') * 0.5 + avgStat(engineers, 'tech') * 0.3 + avgStat(pms, 'management') * 0.2;
+  pq.security = Math.round(pq.security * 0.85 + (secTarget || 30) * 0.15);
+
+  s.productQuality = pq;
+
+  // --- Quality → Business KPI Impact ---
+  // functionality → 顧客獲得率への影響
+  if (pq.functionality >= 80) newCustomers = Math.floor(newCustomers * 1.2);
+  else if (pq.functionality < 40) newCustomers = Math.floor(newCustomers * 0.7);
+
+  // stability → チャーン率への影響
+  if (pq.stability < 50) s.churnRate = Math.min(10, s.churnRate + 0.3);
+  else if (pq.stability >= 80) s.churnRate = Math.max(0.3, s.churnRate - 0.2);
+
+  // customerSuccess → NDR影響
+  if (pq.customerSuccess >= 80) s.ndr = Math.min(150, s.ndr + 0.5);
+  else if (pq.customerSuccess < 50) s.ndr = Math.max(70, s.ndr - 0.5);
+
+  // security → インシデントリスク
+  if (pq.security < 40 && Math.random() < 0.05) {
+    s.eventLog = [...s.eventLog, { month: s.month, title: 'セキュリティインシデント', effect: 'セキュリティ品質不足によりインシデント発生。ブランド低下' }];
+    s.brand = Math.max(0, s.brand - 15);
+    s.churnRate = Math.min(10, s.churnRate + 1.0);
+    s.cash -= 100000;
+  }
+
+  // PMなしペナルティ
+  if (pms.length === 0 && s.employees.length >= 5) {
+    pq.functionality = Math.max(0, pq.functionality - 2);
+    s.productQuality = pq;
+  }
+
+  // Interview slots reset (monthly)
+  s.interviewSlotsLeft = 3;
+  s.jobPostingSlotsLeft = pms.length > 0 && avgStat(pms, 'management') > 70 ? 2 : 1;
+  // Clear expired candidates
+  s.interviewCandidates = s.interviewCandidates.filter(c => s.month - c.hiredMonth < 2);
 
   // --- Employee ability effects ---
   const abilityState = applyAbilityEffects(s);
@@ -1840,6 +1915,126 @@ export function getKPITemplates(role: import('./types').EmployeeRole): { name: s
     { name: '担当プロジェクト完了数', unit: '件', target: 3 },
     { name: 'チーム貢献度', unit: 'pt', target: 70 },
   ];
+}
+
+// ===== Interview / Hiring System =====
+
+export function createJobPosting(state: GameState, role: EmployeeRole, salary: number): GameState {
+  const s = { ...state };
+  if (s.jobPostingSlotsLeft <= 0) return s;
+
+  const posting: import('./types').JobPosting = {
+    id: `job_${Date.now()}`, role, offeredSalary: salary,
+    postedMonth: s.month, status: 'open',
+  };
+  s.jobPostings = [...s.jobPostings, posting];
+  s.jobPostingSlotsLeft -= 1;
+
+  // 候補者プール生成 (知名度+給与ベース)
+  const rep = s.brand;
+  let poolSize = 2;
+  if (rep >= 80) poolSize = 6;
+  else if (rep >= 60) poolSize = 5;
+  else if (rep >= 40) poolSize = 4;
+  else if (rep >= 20) poolSize = 3;
+
+  const hasHeadhunter = s.employees.some(e => e.specialAbility?.id === 'headhunter');
+  const candidates = generateCandidates(role, poolSize, s.month, s.nextEmployeeId, hasHeadhunter);
+
+  // 知名度が低いと高ランクが来ない
+  const filtered = candidates.filter(c => {
+    if (c.grade === 'S' && rep < 50) return Math.random() < 0.05;
+    if (c.grade === 'A' && rep < 30) return Math.random() < 0.15;
+    return true;
+  });
+
+  s.interviewCandidates = [...s.interviewCandidates, ...filtered];
+  s.nextEmployeeId += poolSize;
+
+  s.eventLog = [...s.eventLog, {
+    month: s.month, title: `${roles[role].nameJa}の求人公開`,
+    effect: `${filtered.length}名の応募あり`,
+  }];
+  return s;
+}
+
+export function conductInterview(state: GameState, candidateId: string): GameState {
+  const s = { ...state };
+  if (s.interviewSlotsLeft <= 0) return s;
+
+  const candidate = s.interviewCandidates.find(c => c.id === candidateId);
+  if (!candidate) return s;
+
+  s.interviewSlotsLeft -= 1;
+
+  // 能力を一部だけ公開 (主要能力1つ + ランダム1-2個)
+  const statKeys: (keyof import('./types').EmployeeStats)[] = ['sales', 'tech', 'management', 'creativity', 'loyalty'];
+  const revealed: Partial<import('./types').EmployeeStats> = {};
+  // 常にcommunication的な能力(salesかmanagement)は見える
+  const commKey = Math.random() > 0.5 ? 'sales' : 'management';
+  revealed[commKey] = Math.round((candidate.stats?.[commKey] || 50) + (Math.random() - 0.5) * 20);
+  // ランダムに1-2個追加
+  const others = statKeys.filter(k => k !== commKey).sort(() => Math.random() - 0.5).slice(0, 1 + Math.floor(Math.random() * 2));
+  for (const k of others) {
+    revealed[k] = Math.round((candidate.stats?.[k] || 50) + (Math.random() - 0.5) * 20);
+  }
+
+  // 面談スコア生成
+  const avgAbility = candidate.stats ? Object.values(candidate.stats).reduce((a, b) => a + b, 0) / 5 : 50;
+  const impression = Math.max(1, Math.min(5, Math.round(avgAbility / 20 + (Math.random() - 0.5) * 2)));
+  const culture = Math.max(1, Math.min(5, Math.floor(Math.random() * 5) + 1));
+  const techScore = Math.max(1, Math.min(5, Math.round((candidate.stats?.tech || 50) / 20 + (Math.random() - 0.5) * 1.5)));
+
+  const redFlagPool = ['前職で短期離職の経歴', '質問への回答が曖昧', '給与への強いこだわり', 'チームワークに懸念', '技術トレンドへのキャッチアップが遅い'];
+  const greenFlagPool = ['前職での実績が豊富', '学習意欲が非常に高い', 'カルチャーフィットが良好', 'リーダーシップ経験あり', '業界知識が深い', '問題解決力が高い'];
+
+  const redFlags = Math.random() < 0.3 ? [redFlagPool[Math.floor(Math.random() * redFlagPool.length)]] : [];
+  const greenFlags = Math.random() < 0.5 ? [greenFlagPool[Math.floor(Math.random() * greenFlagPool.length)]] : [];
+
+  const result: import('./types').InterviewResult = {
+    candidateId, candidate, impressionScore: impression, cultureMatch: culture,
+    technicalAssessment: techScore, redFlags, greenFlags, revealedStats: revealed,
+    decision: 'pending',
+  };
+
+  s.interviewResults = [...s.interviewResults, result];
+  return s;
+}
+
+export function makeOffer(state: GameState, candidateId: string): GameState {
+  let s = { ...state };
+  const result = s.interviewResults.find(r => r.candidateId === candidateId);
+  if (!result) return s;
+
+  const baseAcceptance = 0.5;
+  const repBonus = s.brand * 0.003;
+  const cultureBonus = result.cultureMatch * 0.08;
+  const acceptProb = Math.min(0.95, baseAcceptance + repBonus + cultureBonus);
+
+  if (Math.random() < acceptProb) {
+    s = hireEmployee(s, result.candidate.role, result.candidate);
+    s.interviewResults = s.interviewResults.map(r =>
+      r.candidateId === candidateId ? { ...r, decision: 'offer' as const } : r
+    );
+    s.eventLog = [...s.eventLog, { month: s.month, title: '採用成功！', effect: `${result.candidate.name}がチームに参加` }];
+  } else {
+    s.interviewResults = s.interviewResults.map(r =>
+      r.candidateId === candidateId ? { ...r, decision: 'reject' as const } : r
+    );
+    s.eventLog = [...s.eventLog, { month: s.month, title: 'オファー辞退', effect: `${result.candidate.name}が他社を選択` }];
+  }
+
+  s.interviewCandidates = s.interviewCandidates.filter(c => c.id !== candidateId);
+  return s;
+}
+
+export function rejectCandidate(state: GameState, candidateId: string): GameState {
+  const s = { ...state };
+  s.interviewResults = s.interviewResults.map(r =>
+    r.candidateId === candidateId ? { ...r, decision: 'reject' as const } : r
+  );
+  s.interviewCandidates = s.interviewCandidates.filter(c => c.id !== candidateId);
+  return s;
 }
 
 export { businessDomains } from './data/businesses';
