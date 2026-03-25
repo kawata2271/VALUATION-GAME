@@ -17,6 +17,7 @@ import { LogPanel } from '../panels/LogPanel';
 import { AnalyticsPanel } from '../panels/AnalyticsPanel';
 import { SalesPanel } from '../panels/SalesPanel';
 import { StrategyPanel } from '../panels/StrategyPanel';
+import { ObjectivesPanel } from '../panels/ObjectivesPanel';
 import { Tutorial } from '../components/Tutorial';
 import { BoardMeeting } from '../components/BoardMeeting';
 import { AchievementToast } from '../components/AchievementToast';
@@ -40,6 +41,7 @@ const panelTitles: Record<string, string> = {
   log: 'イベントログ',
   analytics: '分析',
   save: 'セーブ',
+  objectives: '目標管理',
 };
 
 export const GameScreen: React.FC = () => {
@@ -260,6 +262,7 @@ export const GameScreen: React.FC = () => {
             <ActionBtn emoji="📊" label="分析" active={panel === 'analytics'} onClick={() => togglePanel('analytics')} />
             <ActionBtn emoji="🚪" label="EXIT" active={panel === 'exit'} onClick={() => togglePanel('exit')} />
             <ActionBtn emoji="📜" label="ログ" active={panel === 'log'} onClick={() => togglePanel('log')} />
+            <ActionBtn emoji="🎯" label="目標" active={panel === 'objectives'} onClick={() => togglePanel('objectives')} />
             <ActionBtn emoji="💾" label="セーブ" active={panel === 'save'} onClick={() => togglePanel('save')} />
           </div>
 
@@ -345,6 +348,7 @@ export const GameScreen: React.FC = () => {
             {panel === 'exit' && <ExitPanel />}
             {panel === 'log' && <LogPanel />}
             {panel === 'analytics' && <AnalyticsPanel />}
+            {panel === 'objectives' && <ObjectivesPanel />}
             {panel === 'save' && (
               <div>
                 <p style={{ fontSize: 12, color: '#888', marginBottom: 12 }}>
@@ -411,6 +415,40 @@ export const GameScreen: React.FC = () => {
 
       {/* Achievement Toast */}
       <AchievementToast achievementIds={state.achievements || []} previousCount={prevAchCount} />
+
+      {/* Quarter Review */}
+      {state.pendingQuarterReview && !state.pendingEvent && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 155 }}>
+          <div style={{ background: '#12121f', borderRadius: 12, padding: 24, maxWidth: 400, width: '90%', border: '1px solid rgba(0,200,150,0.2)' }}>
+            <h3 style={{ margin: '0 0 12px', fontSize: 18, color: '#00c896' }}>四半期目標レビュー</h3>
+            <p style={{ fontSize: 12, color: '#888', marginBottom: 16 }}>前四半期の目標達成状況をレビューし、メンバーの成長に反映します。</p>
+            <button onClick={() => useGameStore.getState().completeQuarterReview()} style={{
+              width: '100%', padding: '10px 0', background: '#00c896', border: 'none', borderRadius: 6,
+              fontSize: 13, fontWeight: 600, color: '#000', cursor: 'pointer',
+            }}>レビューを完了</button>
+          </div>
+        </div>
+      )}
+
+      {/* Objective Setting Prompt */}
+      {state.pendingObjectiveSetting && !state.pendingEvent && !state.pendingQuarterReview && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 155 }}>
+          <div style={{ background: '#12121f', borderRadius: 12, padding: 24, maxWidth: 400, width: '90%', border: '1px solid rgba(99,102,241,0.2)' }}>
+            <h3 style={{ margin: '0 0 12px', fontSize: 18, color: '#6366f1' }}>新しい四半期の目標設定</h3>
+            <p style={{ fontSize: 12, color: '#888', marginBottom: 16 }}>メンバーの四半期目標を設定しましょう。🎯目標パネルからOKRとKPIを設定できます。</p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => { useGameStore.getState().dismissObjectiveSetting(); togglePanel('objectives'); }} style={{
+                flex: 1, padding: '10px 0', background: '#6366f1', border: 'none', borderRadius: 6,
+                fontSize: 13, fontWeight: 600, color: '#fff', cursor: 'pointer',
+              }}>目標を設定する</button>
+              <button onClick={() => useGameStore.getState().dismissObjectiveSetting()} style={{
+                padding: '10px 16px', background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6,
+                fontSize: 12, color: '#666', cursor: 'pointer',
+              }}>スキップ</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Raise Event */}
       {state.pendingRaises && state.pendingRaises.length > 0 && (

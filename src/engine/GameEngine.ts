@@ -141,6 +141,12 @@ export function createInitialState(
     rivals: generateRivals(vertical),
     newsFeed: [],
     pendingRaises: null,
+    quarters: [],
+    objectives: [],
+    memberKPIs: [],
+    currentQuarterId: null,
+    pendingQuarterReview: false,
+    pendingObjectiveSetting: false,
     subBusinesses: [],
     pivotHistory: [],
     pendingPivot: null,
@@ -607,6 +613,85 @@ export function advanceTurn(state: GameState): GameState {
     for (const id of newAchievements) {
       s.eventLog = [...s.eventLog, { month: s.month, title: '実績解除！', effect: id }];
     }
+  }
+
+  // --- Quarter / OKR management ---
+  const gameYear = Math.floor((s.month - 1) / 12) + 1;
+  const gameQuarter = (Math.floor(((s.month - 1) % 12) / 3) + 1) as 1 | 2 | 3 | 4;
+  const qId = `Y${gameYear}Q${gameQuarter}`;
+
+  if (!s.quarters.some(q => q.id === qId)) {
+    // 新しい四半期が始まった
+    const qStartMonth = (gameYear - 1) * 12 + (gameQuarter - 1) * 3 + 1;
+    s.quarters = [...s.quarters, {
+      id: qId, year: gameYear, quarter: gameQuarter,
+      startMonth: qStartMonth, endMonth: qStartMonth + 2,
+      status: 'planning',
+    }];
+    // 前四半期をcloseしてレビューをトリガー
+    const prevQ = s.currentQuarterId;
+    if (prevQ) {
+      s.quarters = s.quarters.map(q =>
+        q.id === prevQ ? { ...q, status: 'closed' } : q
+      );
+      // 前四半期にOKRがあればレビュー発動
+      if (s.objectives.some(o => o.quarterId === prevQ)) {
+        s.pendingQuarterReview = true;
+      }
+    }
+    s.currentQuarterId = qId;
+    // 目標設定フェーズ
+    if (s.employees.length > 0 && s.month > 3) {
+      s.pendingObjectiveSetting = true;
+    }
+    // activeに移行
+    s.quarters = s.quarters.map(q =>
+      q.id === qId ? { ...q, status: 'active' } : q
+    );
+  }
+
+  // KPI自動更新: ゲーム内メトリクスと連動
+  if (s.currentQuarterId) {
+    s.memberKPIs = s.memberKPIs.map(kpi => {
+      const emp = s.employees.find(e => e.id === kpi.memberId);
+      if (!emp || kpi.quarterId !== s.currentQuarterId) return kpi;
+
+      let autoValue = kpi.currentValue;
+      // 職種に応じた自動更新
+      if (kpi.kpiName.includes('売上') || kpi.kpiName.includes('MRR')) {
+        autoValue += s.mrr * 0.01 * (emp.stats.sales / 100);
+      }
+      if (kpi.kpiName.includes('顧客') || kpi.kpiName.includes('アポ')) {
+        autoValue += Math.floor(Math.random() * 3 * (emp.stats.sales / 100));
+      }
+      if (kpi.kpiName.includes('リリース') || kpi.kpiName.includes('開発')) {
+        autoValue += emp.stats.tech > 60 ? 1 : 0.5;
+      }
+      if (kpi.kpiName.includes('NPS') || kpi.kpiName.includes('満足')) {
+        autoValue += s.nps * 0.01;
+      }
+
+      const updated = { ...kpi, currentValue: autoValue };
+      // スナップショット追加(月次)
+      if (!updated.trackingHistory.some(h => h.month === s.month)) {
+        updated.trackingHistory = [...updated.trackingHistory, { month: s.month, value: autoValue, note: '' }];
+      }
+      return updated;
+    });
+
+    // Key Result進捗率更新
+    s.objectives = s.objectives.map(obj => {
+      if (obj.quarterId !== s.currentQuarterId) return obj;
+      return {
+        ...obj,
+        keyResults: obj.keyResults.map(kr => ({
+          ...kr,
+          progress: kr.targetValue > 0
+            ? Math.min(100, Math.round((kr.currentValue / kr.targetValue) * 100))
+            : kr.metricType === 'boolean' ? (kr.currentValue >= 1 ? 100 : 0) : 0,
+        })),
+      };
+    });
   }
 
   // --- Board meeting check (quarterly after first funding) ---
@@ -1604,6 +1689,159 @@ export { scenarios } from './data/scenarios';
 export { generateCandidates } from './employeeGenerator';
 export { GRADE_COLORS } from './data/employeeBalance';
 export { SPECIAL_ABILITIES } from './data/specialAbilities';
+// ===== OKR/KPI Management =====
+
+export function addObjective(state: GameState, memberId: string, title: string, description: string, priority: 'high' | 'medium' | 'low'): GameState {
+  if (!state.currentQuarterId) return state;
+  const existing = state.objectives.filter(o => o.memberId === memberId && o.quarterId === state.currentQuarterId);
+  if (existing.length >= 3) return state;
+
+  const obj: import('./types').Objective = {
+    id: `obj_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    memberId, quarterId: state.currentQuarterId, title, description, priority,
+    keyResults: [], createdAt: state.month,
+  };
+  return { ...state, objectives: [...state.objectives, obj] };
+}
+
+export function addKeyResult(state: GameState, objectiveId: string, title: string, metricType: 'number' | 'percentage' | 'currency' | 'boolean', targetValue: number, unit: string): GameState {
+  return {
+    ...state,
+    objectives: state.objectives.map(obj => {
+      if (obj.id !== objectiveId || obj.keyResults.length >= 5) return obj;
+      return {
+        ...obj,
+        keyResults: [...obj.keyResults, {
+          id: `kr_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          objectiveId, title, metricType, targetValue, currentValue: 0, unit, progress: 0,
+        }],
+      };
+    }),
+  };
+}
+
+export function updateKeyResultValue(state: GameState, objectiveId: string, krId: string, value: number): GameState {
+  return {
+    ...state,
+    objectives: state.objectives.map(obj => {
+      if (obj.id !== objectiveId) return obj;
+      return {
+        ...obj,
+        keyResults: obj.keyResults.map(kr => {
+          if (kr.id !== krId) return kr;
+          const progress = kr.targetValue > 0 ? Math.min(100, Math.round((value / kr.targetValue) * 100)) : 0;
+          return { ...kr, currentValue: value, progress };
+        }),
+      };
+    }),
+  };
+}
+
+export function addMemberKPI(state: GameState, memberId: string, kpiName: string, targetValue: number, unit: string): GameState {
+  if (!state.currentQuarterId) return state;
+  const existing = state.memberKPIs.filter(k => k.memberId === memberId && k.quarterId === state.currentQuarterId);
+  if (existing.length >= 5) return state;
+
+  const kpi: import('./types').MemberKPI = {
+    id: `kpi_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    memberId, quarterId: state.currentQuarterId, kpiName, targetValue, currentValue: 0, unit,
+    trackingHistory: [],
+  };
+  return { ...state, memberKPIs: [...state.memberKPIs, kpi] };
+}
+
+export function deleteObjective(state: GameState, objectiveId: string): GameState {
+  return { ...state, objectives: state.objectives.filter(o => o.id !== objectiveId) };
+}
+
+export function deleteKPI(state: GameState, kpiId: string): GameState {
+  return { ...state, memberKPIs: state.memberKPIs.filter(k => k.id !== kpiId) };
+}
+
+export function processQuarterReview(state: GameState, quarterId: string): GameState {
+  const s = { ...state };
+  const qObjs = s.objectives.filter(o => o.quarterId === quarterId);
+
+  // 各メンバーの総合進捗を計算し、ゲームに反映
+  const memberScores = new Map<string, number>();
+  for (const obj of qObjs) {
+    const avgProgress = obj.keyResults.length > 0
+      ? obj.keyResults.reduce((sum, kr) => sum + kr.progress, 0) / obj.keyResults.length
+      : 50;
+    const current = memberScores.get(obj.memberId) || 0;
+    memberScores.set(obj.memberId, Math.max(current, avgProgress));
+  }
+
+  // 評価をゲームに反映
+  s.employees = s.employees.map(emp => {
+    const score = memberScores.get(emp.id);
+    if (score === undefined) return emp;
+
+    let loyaltyDelta = 0;
+    let statGrowth = 0;
+    if (score >= 80) { loyaltyDelta = 5; statGrowth = 3; }
+    else if (score >= 60) { loyaltyDelta = 2; statGrowth = 1; }
+    else if (score >= 40) { loyaltyDelta = 0; statGrowth = 0; }
+    else { loyaltyDelta = -5; statGrowth = -1; }
+
+    return {
+      ...emp,
+      stats: {
+        sales: Math.max(0, Math.min(100, emp.stats.sales + statGrowth)),
+        tech: Math.max(0, Math.min(100, emp.stats.tech + statGrowth)),
+        management: Math.max(0, Math.min(100, emp.stats.management + statGrowth)),
+        creativity: Math.max(0, Math.min(100, emp.stats.creativity + statGrowth)),
+        loyalty: Math.max(0, Math.min(100, emp.stats.loyalty + loyaltyDelta)),
+      },
+    };
+  });
+
+  // 全社目標達成率 → バリュエーション影響
+  const allScores = Array.from(memberScores.values());
+  const avgOrgScore = allScores.length > 0 ? allScores.reduce((a, b) => a + b, 0) / allScores.length : 50;
+  if (avgOrgScore >= 70) {
+    s.brand = Math.min(100, s.brand + 3);
+    s.morale = Math.min(100, s.morale + 5);
+    s.eventLog = [...s.eventLog, { month: s.month, title: '四半期目標レビュー', effect: `全社達成率${avgOrgScore.toFixed(0)}%。チームの士気が向上！` }];
+  } else if (avgOrgScore < 40) {
+    s.morale = Math.max(0, s.morale - 5);
+    s.eventLog = [...s.eventLog, { month: s.month, title: '四半期目標レビュー', effect: `全社達成率${avgOrgScore.toFixed(0)}%。チームに改善が必要` }];
+  } else {
+    s.eventLog = [...s.eventLog, { month: s.month, title: '四半期目標レビュー', effect: `全社達成率${avgOrgScore.toFixed(0)}%` }];
+  }
+
+  s.pendingQuarterReview = false;
+  s.quarters = s.quarters.map(q => q.id === quarterId ? { ...q, status: 'closed' } : q);
+  return s;
+}
+
+export function getKPITemplates(role: import('./types').EmployeeRole): { name: string; unit: string; target: number }[] {
+  if (role.startsWith('sales_')) return [
+    { name: '月間アポ獲得数', unit: '件', target: 20 },
+    { name: 'MRR貢献額', unit: '万円', target: 50 },
+    { name: '成約率', unit: '%', target: 30 },
+  ];
+  if (role.startsWith('engineer_')) return [
+    { name: '機能リリース数', unit: '件', target: 3 },
+    { name: 'バグ修正数', unit: '件', target: 10 },
+    { name: 'コードレビュー数', unit: '件', target: 15 },
+  ];
+  if (role.startsWith('cs_')) return [
+    { name: '顧客満足度スコア', unit: 'pt', target: 80 },
+    { name: 'チャーン防止数', unit: '社', target: 5 },
+    { name: 'オンボーディング完了数', unit: '社', target: 8 },
+  ];
+  if (role.startsWith('marketing_')) return [
+    { name: 'リード獲得数', unit: '件', target: 50 },
+    { name: 'ブランド認知度向上', unit: 'pt', target: 10 },
+    { name: 'コンテンツ公開数', unit: '本', target: 8 },
+  ];
+  return [
+    { name: '担当プロジェクト完了数', unit: '件', target: 3 },
+    { name: 'チーム貢献度', unit: 'pt', target: 70 },
+  ];
+}
+
 export { businessDomains } from './data/businesses';
 export { pivotTypes } from './data/pivots';
 export type { FundingOption };

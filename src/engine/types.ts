@@ -310,6 +310,14 @@ export interface GameState {
   newsFeed: string[];
   pendingRaises: RaiseRequest[] | null;
 
+  // OKR/KPI
+  quarters: Quarter[];
+  objectives: Objective[];
+  memberKPIs: MemberKPI[];
+  currentQuarterId: string | null;
+  pendingQuarterReview: boolean;
+  pendingObjectiveSetting: boolean;
+
   // Phase 4: Pivot & Multi-business
   subBusinesses: SubBusiness[];
   pivotHistory: PivotRecord[];
@@ -452,11 +460,63 @@ export interface Achievement {
 export type OrgWallType = 'wall_5' | 'wall_15' | 'wall_30' | 'wall_50' | 'wall_100';
 
 export interface TechDebtCategories {
-  infrastructure: number;  // 0-25
-  codeQuality: number;     // 0-25
-  security: number;        // 0-25
-  scalability: number;     // 0-25
+  infrastructure: number;
+  codeQuality: number;
+  security: number;
+  scalability: number;
 }
+
+// ===== OKR / KPI System =====
+
+export interface Quarter {
+  id: string;              // "Y1Q1"
+  year: number;
+  quarter: 1 | 2 | 3 | 4;
+  startMonth: number;
+  endMonth: number;
+  status: 'planning' | 'active' | 'review' | 'closed';
+}
+
+export interface Objective {
+  id: string;
+  memberId: string;
+  quarterId: string;
+  title: string;
+  description: string;
+  priority: 'high' | 'medium' | 'low';
+  keyResults: KeyResult[];
+  createdAt: number;
+}
+
+export interface KeyResult {
+  id: string;
+  objectiveId: string;
+  title: string;
+  metricType: 'number' | 'percentage' | 'currency' | 'boolean';
+  targetValue: number;
+  currentValue: number;
+  unit: string;
+  progress: number;        // 0-100
+}
+
+export interface MemberKPI {
+  id: string;
+  memberId: string;
+  quarterId: string;
+  kpiName: string;
+  targetValue: number;
+  currentValue: number;
+  unit: string;
+  trackingHistory: KPISnapshot[];
+}
+
+export interface KPISnapshot {
+  month: number;
+  value: number;
+  note: string;
+}
+
+export type ReviewGrade = 'S' | 'A' | 'B' | 'C' | 'D';
 
 export interface RivalCompany {
   name: string;

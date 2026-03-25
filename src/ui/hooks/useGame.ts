@@ -14,12 +14,14 @@ import {
   shouldSuggestPivot, getPivotOptions, executePivot,
   canLaunchSubBusiness, launchSubBusiness, withdrawSubBusiness,
   setDevAllocation,
+  addObjective, addKeyResult, updateKeyResultValue, addMemberKPI,
+  deleteObjective, deleteKPI, processQuarterReview, getKPITemplates,
 } from '../../engine/GameEngine';
 import { autoSave, loadAutoSave, clearAutoSave, saveToSlot, loadFromSlot } from './useSave';
 import { Sound } from './useSound';
 
 type Screen = 'title' | 'setup' | 'game' | 'gameover' | 'stats';
-type Panel = 'team' | 'product' | 'funding' | 'sales' | 'strategy' | 'analytics' | 'exit' | 'log' | 'save' | null;
+type Panel = 'team' | 'product' | 'funding' | 'sales' | 'strategy' | 'analytics' | 'exit' | 'log' | 'save' | 'objectives' | null;
 
 interface GameStore {
   screen: Screen;
@@ -71,6 +73,16 @@ interface GameStore {
   launchSub: (domain: BusinessDomainId, name: string, budget: number, team: number) => void;
   withdrawSub: (subId: string) => void;
   setAllocation: (ratio: number) => void;
+
+  // OKR
+  createObjective: (memberId: string, title: string, desc: string, priority: 'high' | 'medium' | 'low') => void;
+  createKeyResult: (objId: string, title: string, type: 'number' | 'percentage' | 'currency' | 'boolean', target: number, unit: string) => void;
+  updateKR: (objId: string, krId: string, value: number) => void;
+  createKPI: (memberId: string, name: string, target: number, unit: string) => void;
+  removeObjective: (objId: string) => void;
+  removeKPI: (kpiId: string) => void;
+  completeQuarterReview: () => void;
+  dismissObjectiveSetting: () => void;
 
   saveGame: (slotId: number) => void;
   loadGame: (slotId: number) => void;
@@ -345,6 +357,55 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const newState = setDevAllocation(state, ratio);
     autoSave(newState);
     set({ state: newState });
+  },
+
+  createObjective: (memberId, title, desc, priority) => {
+    const { state } = get();
+    if (!state) return;
+    set({ state: addObjective(state, memberId, title, desc, priority) });
+  },
+  createKeyResult: (objId, title, type, target, unit) => {
+    const { state } = get();
+    if (!state) return;
+    set({ state: addKeyResult(state, objId, title, type, target, unit) });
+  },
+  updateKR: (objId, krId, value) => {
+    const { state } = get();
+    if (!state) return;
+    set({ state: updateKeyResultValue(state, objId, krId, value) });
+  },
+  createKPI: (memberId, name, target, unit) => {
+    const { state } = get();
+    if (!state) return;
+    set({ state: addMemberKPI(state, memberId, name, target, unit) });
+  },
+  removeObjective: (objId) => {
+    const { state } = get();
+    if (!state) return;
+    set({ state: deleteObjective(state, objId) });
+  },
+  removeKPI: (kpiId) => {
+    const { state } = get();
+    if (!state) return;
+    set({ state: deleteKPI(state, kpiId) });
+  },
+  completeQuarterReview: () => {
+    const { state } = get();
+    if (!state || !state.currentQuarterId) return;
+    const prevQId = state.quarters.find(q => q.status === 'closed' && q.id !== state.currentQuarterId)?.id
+      || state.quarters[state.quarters.length - 2]?.id;
+    if (prevQId) {
+      const newState = processQuarterReview(state, prevQId);
+      autoSave(newState);
+      set({ state: newState });
+    } else {
+      set({ state: { ...state, pendingQuarterReview: false } });
+    }
+  },
+  dismissObjectiveSetting: () => {
+    const { state } = get();
+    if (!state) return;
+    set({ state: { ...state, pendingObjectiveSetting: false } });
   },
 
   saveGame: (slotId) => {
