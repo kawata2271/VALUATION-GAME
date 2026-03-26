@@ -241,17 +241,6 @@ export const TeamPanel: React.FC = () => {
                   </div>
                 ))}
               </div>
-              <button
-                onClick={() => setCandidates(getCandidates(selectedRole, 3))}
-                style={{
-                  width: '100%', marginTop: 8, padding: '6px 0',
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4,
-                  fontSize: 11, color: '#888', cursor: 'pointer',
-                }}
-              >
-                別の候補者を見る
-              </button>
             </div>
           )}
 
