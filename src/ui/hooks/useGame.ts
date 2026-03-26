@@ -292,10 +292,40 @@ export const useGameStore = create<GameStore>((set, get) => ({
   hireCandidate: (candidate) => {
     const { state } = get();
     if (!state) return;
-    Sound.hire();
-    const newState = hireEmployee(state, candidate.role, candidate);
-    autoSave(newState);
-    set({ state: newState });
+
+    // 全職種共通: オファー承諾/辞退の判定
+    const baseAcceptance = 0.6;
+    const repBonus = state.brand * 0.003;
+    const acceptProb = Math.min(0.95, baseAcceptance + repBonus);
+
+    if (Math.random() < acceptProb) {
+      // 承諾 → 採用成功
+      Sound.hire();
+      let newState = hireEmployee(state, candidate.role, candidate);
+      newState = {
+        ...newState,
+        eventLog: [...newState.eventLog, {
+          month: newState.month,
+          title: '採用成功！',
+          effect: `${candidate.name}（${candidate.grade}ランク）がオファーを承諾しチームに参加`,
+        }],
+      };
+      autoSave(newState);
+      set({ state: newState });
+    } else {
+      // 辞退
+      Sound.fundingFail();
+      const newState = {
+        ...state,
+        eventLog: [...state.eventLog, {
+          month: state.month,
+          title: 'オファー辞退',
+          effect: `${candidate.name}が他社のオファーを選択しました`,
+        }],
+      };
+      autoSave(newState);
+      set({ state: newState });
+    }
   },
 
   getCandidates: (role, count) => {

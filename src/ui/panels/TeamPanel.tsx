@@ -68,8 +68,12 @@ export const TeamPanel: React.FC = () => {
 
   const doHire = (candidate: Employee) => {
     hireCandidate(candidate);
-    setCandidates([]);
-    setSelectedRole(null);
+    // オファー承諾/辞退に関わらずUIをリセット
+    setCandidates(prev => prev.filter(c => c.id !== candidate.id));
+    if (candidates.length <= 1) {
+      setCandidates([]);
+      setSelectedRole(null);
+    }
   };
 
   return (
