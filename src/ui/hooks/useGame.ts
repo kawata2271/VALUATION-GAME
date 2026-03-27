@@ -20,6 +20,7 @@ import {
 } from '../../engine/GameEngine';
 import { autoSave, loadAutoSave, clearAutoSave, saveToSlot, loadFromSlot } from './useSave';
 import { Sound } from './useSound';
+import { useRecruitingStore } from '../../engine/recruiting';
 
 type Screen = 'title' | 'setup' | 'game' | 'gameover' | 'stats';
 type Panel = 'team' | 'product' | 'funding' | 'sales' | 'strategy' | 'analytics' | 'exit' | 'log' | 'save' | 'objectives' | null;
@@ -110,6 +111,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   startGame: (companyName, vertical, founder, techStack, cofounder, gameMode, scenarioId) => {
     const state = createInitialState(companyName, vertical, founder, techStack, cofounder, gameMode, scenarioId);
+    // 新採用システムを初期化
+    try {
+      useRecruitingStore.getState().initRecruitingState();
+    } catch (_e) { /* ignore */ }
     set({ state, screen: 'game', panel: null });
   },
 
@@ -130,6 +135,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (newState.achievements.length > (state.achievements?.length || 0)) {
       Sound.achievement();
     }
+    // 新採用システムのターン処理
+    try {
+      const recruitingStore = useRecruitingStore.getState();
+      recruitingStore.processRecruitingTurn(newState);
+    } catch (_e) {
+      // 採用システムが未初期化の場合は無視
+    }
+
     if (newState.gameOver) {
       if (newState.exitType === 'bankrupt') Sound.bankrupt();
       set({ state: newState, screen: 'gameover' });

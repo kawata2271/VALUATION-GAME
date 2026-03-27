@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { useGameStore } from '../hooks/useGame';
 import { roles } from '../../engine/data/roles';
 import { GRADE_COLORS } from '../../engine/data/employeeBalance';
 import { EmployeeRole, Employee, EmployeeGrade } from '../../engine/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatSalary } from '../../utils/currency';
+
+const RecruitingDashboard = lazy(() => import('./recruiting/RecruitingDashboard').then(m => ({ default: m.RecruitingDashboard })));
 
 const roleCategories = [
   { name: 'エンジニア', prefix: 'engineer_' },
@@ -46,7 +48,7 @@ export const TeamPanel: React.FC = () => {
   const fire = useGameStore(s => s.fire);
   const hireCandidate = useGameStore(s => s.hireCandidate);
   const getCandidates = useGameStore(s => s.getCandidates);
-  const [tab, setTab] = useState<'current' | 'hire'>('current');
+  const [tab, setTab] = useState<'current' | 'hire' | 'recruiting'>('current');
   const [candidates, setCandidates] = useState<Employee[]>([]);
   const [selectedRole, setSelectedRole] = useState<EmployeeRole | null>(null);
   const [detailEmp, setDetailEmp] = useState<Employee | null>(null);
@@ -83,11 +85,18 @@ export const TeamPanel: React.FC = () => {
           チーム ({state.employees.length}人)
         </TabBtn>
         <TabBtn active={tab === 'hire'} onClick={() => { setTab('hire'); setCandidates([]); setSelectedRole(null); }}>
-          採用する
+          即採用
+        </TabBtn>
+        <TabBtn active={tab === 'recruiting'} onClick={() => setTab('recruiting')}>
+          採用プロセス
         </TabBtn>
       </div>
 
-      {tab === 'current' ? (
+      {tab === 'recruiting' ? (
+        <Suspense fallback={<div style={{ color: '#666', textAlign: 'center', padding: 20 }}>読み込み中...</div>}>
+          <RecruitingDashboard />
+        </Suspense>
+      ) : tab === 'current' ? (
         <div>
           <div style={{ fontSize: 12, color: '#888', marginBottom: 12 }}>
             年間人件費: {formatSalary(totalSalary)} (月額: {formatSalary(totalSalary / 12)})

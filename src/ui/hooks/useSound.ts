@@ -151,6 +151,68 @@ export const Sound = {
     playTone(600, 0.04, 'sine', 0.05);
   },
 
+  // === Recruiting System Sounds ===
+
+  // 能力開示 - sparkle reveal
+  abilityReveal() {
+    playTone(880, 0.08, 'sine', 0.06);
+    setTimeout(() => playTone(1100, 0.08, 'sine', 0.06), 60);
+    setTimeout(() => playTone(1320, 0.12, 'sine', 0.08), 120);
+  },
+
+  // 面談イベント発生 - notification chime
+  interviewEvent() {
+    playTone(660, 0.1, 'sine', 0.08);
+    setTimeout(() => playTone(880, 0.12, 'sine', 0.06), 80);
+  },
+
+  // 面談好印象 - positive feedback
+  interviewGood() {
+    playTone(523, 0.08, 'sine', 0.08);
+    setTimeout(() => playTone(659, 0.1, 'sine', 0.08), 80);
+    setTimeout(() => playTone(784, 0.15, 'sine', 0.06), 160);
+  },
+
+  // 面談悪印象 - negative feedback
+  interviewBad() {
+    playTone(330, 0.15, 'triangle', 0.06);
+    setTimeout(() => playTone(294, 0.2, 'triangle', 0.05), 120);
+  },
+
+  // オファー承諾 - celebration fanfare
+  offerAccepted() {
+    playTone(523, 0.1, 'sine', 0.1);
+    setTimeout(() => playTone(659, 0.1, 'sine', 0.1), 100);
+    setTimeout(() => playTone(784, 0.1, 'sine', 0.1), 200);
+    setTimeout(() => playTone(1047, 0.3, 'sine', 0.12), 300);
+    setTimeout(() => playTone(1319, 0.4, 'sine', 0.1), 400);
+  },
+
+  // オファー辞退 - disappointment
+  offerRejected() {
+    playTone(440, 0.2, 'sine', 0.06);
+    setTimeout(() => playTone(349, 0.2, 'sine', 0.05), 150);
+    setTimeout(() => playTone(294, 0.3, 'sine', 0.04), 300);
+  },
+
+  // 候補者離脱 - farewell
+  candidateLost() {
+    playTone(392, 0.15, 'sine', 0.05);
+    setTimeout(() => playTone(330, 0.25, 'sine', 0.04), 150);
+  },
+
+  // 候補者発見 - search ping
+  candidateFound() {
+    playTone(1000, 0.06, 'sine', 0.06);
+    setTimeout(() => playTone(1200, 0.08, 'sine', 0.05), 60);
+  },
+
+  // 給与交渉 - tension
+  negotiation() {
+    playTone(440, 0.1, 'triangle', 0.05);
+    setTimeout(() => playTone(494, 0.1, 'triangle', 0.05), 100);
+  },
+
   // Bankruptcy
   bankrupt() {
     playTone(220, 0.5, 'sawtooth', 0.06);
